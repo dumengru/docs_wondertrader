@@ -2,7 +2,7 @@
 sort: 4
 ---
 
-# Mermaid Test
+# 策略编写
 
     ```mermaid
     graph TB
