@@ -2,7 +2,7 @@
 sort: 2
 ---
 
-# WonderTrader CPP
+# WonderTrader
 
 ```
 {% raw %}{% include list.liquid all=true %}{% endraw %}

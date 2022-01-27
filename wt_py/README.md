@@ -2,7 +2,7 @@
 sort: 1
 ---
 
-# WonderTrader PY
+# WTPY
 
 ```
 {% raw %}{% include list.liquid all=true %}{% endraw %}
