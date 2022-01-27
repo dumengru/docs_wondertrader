@@ -1,5 +1,5 @@
 # WonderTrader文档
-![WonderTrader2.png](http://wt.f-sailors.cn/wt/logo_qcode_noad.jpg)
+![wt01.jfif](./assets/images/wt/wt01.jfif)
 <p align="center">
     <img src ="https://img.shields.io/badge/version-0.8.0-blueviolet.svg"/>
     <img src ="https://img.shields.io/badge/platform-windows|linux-yellow.svg"/>
@@ -16,7 +16,7 @@
 
 
 * `WonderTrader`的基本架构图
-    ![WonderTrader基本架构.jpg](http://wt.f-sailors.cn/wt/structure2.jpg)
+    ![wt02.jfif](./assets/images/wt/wt02.jfif)
 
 #### `WonderTrader`的优势
 * **丰富的交易引擎**
@@ -53,14 +53,14 @@
 
 * **强大的控制台**（[wtpy](https://github.com/wondertrader/wtpy)的监控服务）
     > - **组合盘运行监控**：可以查看实时运行日志、策略理论数据、交易通道数据等，并提供手动启停的入口。
-    ![monitor.jpg](http://wt.f-sailors.cn/snapshots/monitor.jpg)
+    ![wt03.jfif](./assets/images/wt/wt03.jfif)
     > - **自动调度服务**：全自动调度定时任务（启动、停止、重启），支持按周设置任务重复，支持进程守护。
-    ![schedule.jpg](http://wt.f-sailors.cn/snapshots/schedule.jpg)
+    ![wt04.jfif](./assets/images/wt/wt04.jfif)
     > - **实时事件通知**：监控服务接收组合盘推送的事件，然后转发给监控端，提示给用户。
     > - **在线回测分析**：全自动远程部署以后，提供在线回测服务，并进行结果分析和图形化展示。
-    ![stra_editor.jpg](http://wt.f-sailors.cn/snapshots/stra_editor.jpg)
-    ![bt_perform.jpg](http://wt.f-sailors.cn/snapshots/bt_perform.jpg)
-    ![bt_signals.jpg](http://wt.f-sailors.cn/snapshots/bt_signals.jpg)
+    ![wt05.jfif](./assets/images/wt/wt05.jfif)
+    ![wt06.jfif](./assets/images/wt/wt06.jfif)
+    ![wt07.jfif](./assets/images/wt/wt07.jfif)
     > - **全自动远程部署(在建)**：全自动在线远程部署，提供回测环境、实盘环境等多种应用场景的自动化部署服务。
 
 #### 应用场景简介
