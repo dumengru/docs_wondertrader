@@ -1,3 +1,3 @@
-# file2 copy
+# file6
 
 source: `{{ page.path }}`
