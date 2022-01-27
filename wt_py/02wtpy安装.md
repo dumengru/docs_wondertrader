@@ -2,7 +2,7 @@
 sort: 2
 ---
 
-# Toasts Card
+# wtpy安装
 
 THIS IS TOO LONG, NEED UPDATE! HERE IS SOME IDEAS:
 
