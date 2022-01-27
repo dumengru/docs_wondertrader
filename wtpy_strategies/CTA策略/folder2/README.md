@@ -1,3 +1,3 @@
-# CTA策略
+# I'm folder2
 
 source: `{{ page.path }}`

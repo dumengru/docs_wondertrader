@@ -2,7 +2,7 @@
 sort: 3
 ---
 
-# This is an incredibly long caption for a long menu
+# wtpy 策略示例
 
 ```
 {% raw %}{% include list.liquid all=true %}{% endraw %}
