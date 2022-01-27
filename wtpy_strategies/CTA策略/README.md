@@ -1,3 +1,0 @@
-# CTA策略
-
-source: `{{ page.path }}`
