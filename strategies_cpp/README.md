@@ -2,7 +2,7 @@
 sort: 5
 ---
 
-# wtpy 策略示例
+# wtcpp 策略示例
 
 ```
 {% raw %}{% include list.liquid all=true %}{% endraw %}
