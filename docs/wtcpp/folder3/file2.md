@@ -14,7 +14,7 @@ source: `{{ page.path }}`
 
 <details>
 
-```C++
+```cpp
 class WTSArray : public WTSObject
 {
 public:
@@ -240,7 +240,7 @@ map容器
 
 <details>
 
-```C++
+```cpp
 template <typename T>
 class WTSHashMap : public WTSObject
 {
@@ -372,7 +372,7 @@ map容器
 
 <details>
 
-```C++
+```cpp
 template <typename T>
 class WTSHashMap : public WTSObject
 {
@@ -508,7 +508,7 @@ protected:
 
 <details>
 
-```C++
+```cpp
 class WTSQueue : public WTSObject
 {
 public:

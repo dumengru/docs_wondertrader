@@ -4,7 +4,7 @@ source: `{{ page.path }}`
 
 ## WTSTypes.h
 
-```C++
+```cpp
 // 合约分类
 typedef enum tagContractCategory
 {

@@ -4,7 +4,7 @@ source: `{{ page.path }}`
 
 ## WTSObject.hpp
 
-```C++
+```cpp
 class WTSObject
 {
 public:

@@ -4,7 +4,7 @@ source: `{{ page.path }}`
 
 ## WTSStruct.h
 
-```C++
+```cpp
 // K线结构
 struct WTSBarStruct
 {
