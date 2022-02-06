@@ -1,4 +1,4 @@
-# 1. 基础Object定义
+# 1. 基础Object
 
 source: `{{ page.path }}`
 

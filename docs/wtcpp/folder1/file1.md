@@ -5,6 +5,7 @@ source: `{{ page.path }}`
 ## WTSMarcos.h
 
 ```cpp
+// 合约/交易所代码最大长度
 #define MAX_INSTRUMENT_LENGTH	32
 #define MAX_EXCHANGE_LENGTH		10
 
