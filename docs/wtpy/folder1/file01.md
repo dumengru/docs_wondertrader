@@ -1,4 +1,4 @@
-# 安装wtpy
+# 快速入门
 
 source: `{{ page.path }}`
 
