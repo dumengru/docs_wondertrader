@@ -1,8 +1,8 @@
 ---
-sort: 11
+sort: 1
 ---
 
-# wtcpp 策略示例
+# wtcpp
 
 ```
 {% raw %}{% include list.liquid all=true %}{% endraw %}

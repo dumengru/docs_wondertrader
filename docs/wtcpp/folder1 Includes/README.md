@@ -1,3 +1,3 @@
-# SEL 策略
+# folder1 CTA 策略
 
 source: `{{ page.path }}`
