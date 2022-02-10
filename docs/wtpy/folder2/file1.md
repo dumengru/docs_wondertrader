@@ -2,6 +2,8 @@
 
 source: `{{ page.path }}`
 
+## 策略基本结构
+
 `WonderTrader`的策略非常简单，一共就4个接口函数`on_init`、`on_bar`、`on_tick`、`on_calculate`，核心逻辑只需要写入on_calculate里即可。
 
 ```py
@@ -59,7 +61,7 @@ class BaseCtaStrategy:
         return
 ```
 
-### 回调函数详解
+## 回调函数详解
 ---
 为了详细的介绍各个接口函数的作用，我们以demo中的DualThrust策略为例，来参照介绍
 ```py

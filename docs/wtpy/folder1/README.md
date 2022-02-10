@@ -1,4 +1,4 @@
-# wtpy
+# 基本用法
 
 source: `{{ page.path }}`
 

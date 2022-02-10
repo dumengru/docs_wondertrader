@@ -2,7 +2,7 @@
 
 source: `{{ page.path }}`
 
-### 编写自己的策略
+## 编写自己的策略
 ---
 * 安装wtpy
     打开命令行，输入以下指令直接安装
@@ -162,7 +162,7 @@ source: `{{ page.path }}`
 
     ```
 
-### 回测自己的策略
+## 回测自己的策略
 ---
 * 首先从demo里选择期货回测demo: [cta_fut_bt](https://github.com/wondertrader/wtpy/tree/master/demos/cta_fut_bt)
 * 将策略模块`RBreaker.py`复制到`strategies/`目录下

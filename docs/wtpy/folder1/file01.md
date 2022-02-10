@@ -20,7 +20,7 @@ source: `{{ page.path }}`
     $ pip show wtpy
     ```
 
-### 选择要运行的demo
+## 选择要运行的demo
 ---
 * github上提供了python下的几个demo
     * cta期货策略实盘 [cta_fut](https://github.com/wondertrader/wtpy/tree/master/demos/cta_fut)
@@ -34,7 +34,7 @@ source: `{{ page.path }}`
 
 * 选择需要的demo，如期货回测demo
 
-### 修改demo的配置
+## 修改demo的配置
 ---
 * 打开回测配置文件configbt.json
     ```json
@@ -59,7 +59,7 @@ source: `{{ page.path }}`
     }
     ```
 
-### 回测及结果分析
+## 回测及结果分析
 ---
 * 打开回测入口文件runBT.py，配置好回测引擎，加入要测试的策略，以及设置好绩效分析的参数
     ```python
