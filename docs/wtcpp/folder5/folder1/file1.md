@@ -1,4 +1,4 @@
-# 01-01 CTA策略工厂
+# CTA策略工厂
 
 source: `{{ page.path }}`
 

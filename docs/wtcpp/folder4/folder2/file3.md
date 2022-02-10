@@ -1,4 +1,4 @@
-# 02-03 CTA调度器模板
+# CTA调度器模板
 
 source: `{{ page.path }}`
 

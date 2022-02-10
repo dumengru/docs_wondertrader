@@ -1,4 +1,4 @@
-# 04-09 CTA接口
+# CTA接口
 
 source: `{{ page.path }}`
 

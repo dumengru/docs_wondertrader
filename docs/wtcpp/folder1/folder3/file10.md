@@ -1,4 +1,4 @@
-# 04-10 HFT接口
+# HFT接口
 
 source: `{{ page.path }}`
 

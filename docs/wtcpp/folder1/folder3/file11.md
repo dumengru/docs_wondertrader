@@ -1,4 +1,4 @@
-# 04-11 SEL接口
+# SEL接口
 
 source: `{{ page.path }}`
 

@@ -1,4 +1,4 @@
-# 01-02 CTA策略示例
+# CTA策略示例
 
 source: `{{ page.path }}`
 
