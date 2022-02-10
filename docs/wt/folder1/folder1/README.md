@@ -1,0 +1,3 @@
+# DEMO
+
+source: `{{ page.path }}`

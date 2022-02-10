@@ -2,6 +2,6 @@
 sort: 1
 ---
 
-# WT
+# WonderTrader
 
 {% include list.liquid all=true %}
