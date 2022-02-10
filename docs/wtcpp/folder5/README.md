@@ -1,3 +1,3 @@
-# folder5 WtStraFact
+# WtStraFact
 
 source: `{{ page.path }}`

@@ -1,3 +1,3 @@
-# folder2 Share
+# Share
 
 source: `{{ page.path }}`

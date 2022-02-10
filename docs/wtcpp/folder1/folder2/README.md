@@ -1,3 +1,3 @@
-# folder2 定义结构体
+# 定义基础类
 
 source: `{{ page.path }}`

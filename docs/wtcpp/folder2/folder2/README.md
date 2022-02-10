@@ -1,3 +1,3 @@
-# folder4 定义接口类
+# 动态库处理
 
 source: `{{ page.path }}`

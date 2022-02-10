@@ -1,3 +1,3 @@
-# folder3 WTSTools
+# WTSTools
 
 source: `{{ page.path }}`

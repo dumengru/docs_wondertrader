@@ -1,3 +1,3 @@
-# folder4 WtBt
+# WtBt
 
 source: `{{ page.path }}`
