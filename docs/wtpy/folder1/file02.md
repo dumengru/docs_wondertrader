@@ -17,7 +17,7 @@ source: `{{ page.path }}`
 
  提取码: **d6bh**
  
- ![image.png](https://segmentfault.com/img/bVbZLhk)
+ ![image.png](../../assets/images/wtpy/wtpy001.png)
 
 ## `Linux`开发环境搭建
 操作系统：**Ubuntu Server 18.04.3 LTS**
@@ -25,56 +25,56 @@ source: `{{ page.path }}`
 
 ### 1、使用`vmware`安装`ubuntu server 18.04.3 LTS`镜像
 镜像可以从**共享资源**中直接下载
-![image.png](https://segmentfault.com/img/bVbZLhw)
-![image.png](https://segmentfault.com/img/bVbZLhx)
+![image.png](../../assets/images/wtpy/wtpy002.png)
+![image.png](../../assets/images/wtpy/wtpy003.png)
 
 ### 2、虚拟机创建成功以后，自动开启，进入安装界面，然后一路默认
-![image.png](https://segmentfault.com/img/bVbZLhM)
+![image.png](../../assets/images/wtpy/wtpy004.png)
 
 ### 3、到了源配置界面，一定要把镜像改为国内镜像！
 这个很重要！不然安装特别慢！
-![image.png](https://segmentfault.com/img/bVbZLhO)
+![image.png](../../assets/images/wtpy/wtpy005.png)
 **推荐使用阿里云的源http://mirrors.aliyun.com/ubuntu**
-![image.png](https://segmentfault.com/img/bVbZLhP)
+![image.png](../../assets/images/wtpy/wtpy006.png)
 
 ### 4、到了SSH配置界面，一定要选择`SSH server`，不然会无法使用`putty`或`SecureCRT`
-![image.png](https://segmentfault.com/img/bVbZLhR)
+![image.png](../../assets/images/wtpy/wtpy007.png)
 
 ### 5、到了组件选择界面，不用安装多余的组件，直接`done`
-![image.png](https://segmentfault.com/img/bVbZLhI)
+![image.png](../../assets/images/wtpy/wtpy008.png)
 
 ### 6、进入最后流程
 这里会有安全升级，可能耗时较长（如果前面没有配置国内镜像，这里的时间更是数倍）,也可以跳过安全升级
-![image.png](https://segmentfault.com/img/bVbZLhV)
+![image.png](../../assets/images/wtpy/wtpy009.png)
 
 ### 7、重启之后，进入控制台
 如果使用`SecureCRT`连接，在`vmware`中可以看一下虚拟机的ip地址，然后配置连接地址和账号密码进行连接
-![image.png](https://segmentfault.com/img/bVbZLh5)
+![image.png](../../assets/images/wtpy/wtpy010.png)
 
 ### 8、安装开发环境
 ```shell
 $ sudo apt-get install build-essential
 ```
-![image.png](https://segmentfault.com/img/bVbZLil) 
+![image.png](../../assets/images/wtpy/wtpy011.png) 
 
 使用`gcc --version`查看`gcc`的版本号
-![image.png](https://segmentfault.com/img/bVbZLin)
+![image.png](../../assets/images/wtpy/wtpy012.png)
 
 安装`cmake`
-![image.png](https://segmentfault.com/img/bVbZLio)
+![image.png](../../assets/images/wtpy/wtpy013.png)
 
 使用`cmake --version`查看`cmake`的版本号
-![image.png](https://segmentfault.com/img/bVbZLip)
+![image.png](../../assets/images/wtpy/wtpy014.png)
 
 安装7z解压工具
 ```shell
 $ sudo apt-get install p7zip-full
 ```
-![image.png](https://segmentfault.com/img/bVbZLiq)
+![image.png](../../assets/images/wtpy/wtpy015.png)
 
 ### 9、从`共享资源`中下载`mydes_linux.7z`并上传到虚拟机
 可以使用使用`SecureFX`（**共享资源**中的`SecureCRT`自带`SecureFX`）上传到虚拟机，如下图：
-![image.png](https://segmentfault.com/img/bVbZLir)
+![image.png](../../assets/images/wtpy/wtpy016.png)
 
 ### 10、将`mydeps_linux.7z`解压到`/home`下
 ```shell
@@ -85,51 +85,51 @@ $ sudo 7z x mydeps_linux.7z /home
 ```shell
 $ sudo git clone https://github.com/wondertrader/wondertrader.git
 ```
-![image.png](https://segmentfault.com/img/bVbZLiz)
+![image.png](../../assets/images/wtpy/wtpy017.png)
 
 ### 12、进入`src`目录，执行编译脚本
 ```shell
 $ sudo ./build_release.sh
 ```
 编译完成以后，使用`SecureFX`就可以直接从`src`目录下的`build/bin`中下载需要的文件即可
-![image.png](https://segmentfault.com/img/bVbZLiA)
+![image.png](../../assets/images/wtpy/wtpy018.png)
 
 
 ## `Windows`开发环境搭建
 ### 1、安装`vs2017`社区版
 首先下载`vs2017`的安装器，下载地址如下：
 [https://visualstudio.microsoft.com/zh-hans/vs/older-downloads/](https://visualstudio.microsoft.com/zh-hans/vs/older-downloads/)
-![image.png](https://segmentfault.com/img/bVbZLiR)
-![image.png](https://segmentfault.com/img/bVbZLiT)
+![image.png](../../assets/images/wtpy/wtpy019.png)
+![image.png](../../assets/images/wtpy/wtpy020.png)
 
 或者直接从**共享资源**中直接下载该安装器
 
 ### 2、从`共享资源`中下载`vc141deps_win.7z`，并解压到`E:/vc141depends`目录
-![image.png](https://segmentfault.com/img/bVbZLiY)
+![image.png](../../assets/images/wtpy/wtpy021.png)
 
 ### 3、配置环境变量
 
 从**共享资源**中下载环境变量编辑器`RapidEE`到本地，解压以后运行。
 新建一个名为`MyDepends141`的环境变量，并将值设置为依赖库解压目录`E:/vc141depends`
-![image.png](https://segmentfault.com/img/bVbZLi0)
+![image.png](../../assets/images/wtpy/wtpy022.png)
 设置好了以后，保存环境变量，即可生效，如果没有生效，可以重启电脑。`win10`下要注意一下使用**管理员身份运行**`RapidEE`，不然保存可能会失败！
 
 ### 4、安装`git`
 
 下载git并安装：[https://git-scm.com/download/win](https://git-scm.com/download/win)
-![image.png](https://segmentfault.com/img/bVbZLi4)
+![image.png](../../assets/images/wtpy/wtpy023.png)
 下载tortoisegit并安装：[https://tortoisegit.org/download/](https://tortoisegit.org/download/)
-![image.png](https://segmentfault.com/img/bVbZLi5)
+![image.png](../../assets/images/wtpy/wtpy024.png)
 
 ### 5、下载代码
 选择一个目录，然后右键点击该目录，选择“**Git克隆**”菜单
-![image.png](https://segmentfault.com/img/bVbZLi8)
+![image.png](../../assets/images/wtpy/wtpy025.png)
 URL设置为:<https://github.com/wondertrader/wondertrader.git>
-![image.png](https://segmentfault.com/img/bVbZLjc)
+![image.png](../../assets/images/wtpy/wtpy026.png)
 
 ### 6、编译代码
 进入到`wondertrader`的`src`目录下
-![image.png](https://segmentfault.com/img/bVbZLjd)
+![image.png](../../assets/images/wtpy/wtpy027.png)
 双击运行`wondertrader.sln`，打开以后在解决方案上右键点击，选择“**生成解决方案**”就进入了编译过程
-![image.png](https://segmentfault.com/img/bVbZLje)
-![image.png](https://segmentfault.com/img/bVbZLjf)
+![image.png](../../assets/images/wtpy/wtpy028.png)
+![image.png](../../assets/images/wtpy/wtpy029.png)

@@ -132,7 +132,7 @@ class BaseDataHelper:
     ```
 
 代码列表下载截图
-![代码列表下载截图](https://segmentfault.com/img/bVcO4ze)
+![代码列表下载截图](../../assets/images/wtpy/wtpy034.png)
 
 代码列表文件示意
 ```json
@@ -169,7 +169,7 @@ class BaseDataHelper:
 ```
 
 除权因子下载截图
-![除权因子下载截图](https://segmentfault.com/img/bVcO4zM)
+![除权因子下载截图](../../assets/images/wtpy/wtpy035.png)
 
 
 除权因子文件示意
@@ -227,7 +227,7 @@ class BaseDataHelper:
 ```
 
 K线数据下载截图<br>
-![K线数据下载截图](https://segmentfault.com/img/bVcO4Ad)
+![K线数据下载截图](../../assets/images/wtpy/wtpy036.png)
 
 K线数据示意
 ```csv
@@ -261,10 +261,10 @@ dbHelper.initDB()
 ```
 
 创建空数据库截图<br>
-![创建空数据库](https://segmentfault.com/img/bVcO4AL)
+![创建空数据库](../../assets/images/wtpy/wtpy037.png)
 
 初始化好的数据库截图<br>
-![初始化好的数据库截图](https://segmentfault.com/img/bVcO4AZ)
+![初始化好的数据库截图](../../assets/images/wtpy/wtpy038.png)
 
 ### 下载数据到数据库中
 * 数据库初始化好了以后，就可以进行数据下载了：
@@ -277,16 +277,16 @@ dbHelper.initDB()
     ```
 
 下载除权因子到数据库截图
-![下载除权因子到数据库截图](https://segmentfault.com/img/bVcO4A6)
+![下载除权因子到数据库截图](../../assets/images/wtpy/wtpy039.png)
 
 数据库中除权因子表截图
-![数据库中除权因子表截图](https://segmentfault.com/img/bVcO4Bc)
+![数据库中除权因子表截图](../../assets/images/wtpy/wtpy040.png)
 
 下载日K线到数据库截图
-![下载除权因子到数据库截图](https://segmentfault.com/img/bVcO4Bq)
+![下载除权因子到数据库截图](../../assets/images/wtpy/wtpy041.png)
 
 数据库中日K线表截图
-![数据库中除权因子表截图](https://segmentfault.com/img/bVcO4Bz)
+![数据库中除权因子表截图](../../assets/images/wtpy/wtpy042.png)
 
 ## 数据的后续处理
 &emsp;&emsp;上面演示了**datahelper**模块的用法，该模块能够帮助用户快速拉取**WonderTrader**可以直接使用的历史数据，可以有效的降低用户初次使用**WonderTrader**进行策略回测的门槛。

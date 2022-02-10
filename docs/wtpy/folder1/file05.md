@@ -24,7 +24,7 @@ optimizer.add_listed_param(name="code", val_list=["CFFEX.IF.HOT","CFFEX.IC.HOT"]
 首先我们还是祭出**WonderTrader**惯用的`DualThrust`策略。
 
 `DualThrust`策略是一个突破策略，利用前N日的开高低收确定一个`Range`，然后利用当前K线的开盘价加上`Range`乘以一个系数得到一个上轨，减去`Range`乘以一个系数得到一个下轨，当最新价突破上轨时做多，突破下轨时做空。
-![DualThrust示意图(源自网络，侵删)](https://segmentfault.com/img/bVcOC7j)
+![DualThrust示意图(源自网络，侵删)](../../assets/images/wtpy/wtpy045.png)
 `DualThrust`原模型中，上下轨是对称的，文本所用的`DualThrust`策略在实现时把上下轨的系数作为两个不同的参数，策略核心逻辑如下：
 ```py
 def on_calculate(self, context:CtaContext):
@@ -133,15 +133,15 @@ if __name__ == "__main__":
 本例中设置工作进程的个数为4个，用户可以自行根据自己的需求设置，一般推荐设置的个数和`CPU`内核数匹配。
 优化器入口配置好了，就可以启动回测了。
 **优化器执行界面**
-![](https://segmentfault.com/img/bVcOCZN)
+![](../../assets/images/wtpy/wtpy046.png)
 **系统资源占用情况**
-![](https://segmentfault.com/img/bVcOCZP)
+![](../../assets/images/wtpy/wtpy047.png)
 优化器批量回测完成以后，我们可以得到一个汇总报表
-![回测结果分析](https://segmentfault.com/img/bVcOC0L)
+![回测结果分析](../../assets/images/wtpy/wtpy048.png)
 我们先按照**收益风险比大于3**，进行初步筛选。
-![盈亏比大于3的参数组合](https://segmentfault.com/img/bVcOC0N)
+![盈亏比大于3的参数组合](../../assets/images/wtpy/wtpy049.png)
 最终我们选择交易次数最多的一个参数对，即k1和k2都等于0.4这组，作为我们最基础的策略参数。先利用**WtBtAnalyst**做一下绩效分析，2019年股指期货大概在4000点左右，合约价值大概120万，按照一倍杠杆，设置初始资金为120万。
-![k1=0.4/k2=0.4回测绩效](https://segmentfault.com/img/bVcOC1W)
+![k1=0.4/k2=0.4回测绩效](../../assets/images/wtpy/wtpy050.png)
 从绩效来看，这组参数还是很有潜力的。**至于本例是否涉及到过拟合、是否要需要进行样本外数据的回测，这不是本文探讨的范畴**。从绩效分析上来看，**年化收益率**达到了**52.6%**，但是最大回撤只有**5.36%**。
 
 ## 加入止损
@@ -174,7 +174,7 @@ def runStopLossOptimizer():
     optimizer.go(interval=0.2, out_marker_file="strategies.json",out_summary_file="total_summary.csv")
 ```
 汇总的回测结果如下。通过简单的分析，我们不难发现，虽然设置止损以后，对提高**收益风险比**有很大的促进，最大的是-0.2点止损，**收益风险比**可以达到**17倍**以上。但是付出的代价就是总收益的下降，设置了止损点以后，最终**净收益**比未设置止损点的时候，**少了约30万~40万，约为原来的1/3~1/2**。
-![止损逻辑回测汇总](https://segmentfault.com/img/bVcOC43)
+![止损逻辑回测汇总](../..assets/images/../../../assets/images/wtpy/wtpy051.png)
 
 ## 加入止盈
 下面我们再来看一下止盈逻辑。本文为了简化逻辑，采用**固定点位止盈**。
@@ -206,7 +206,7 @@ def runStopProfOptimizer():
     optimizer.go(interval=0.2, out_marker_file="strategies.json",out_summary_file="total_summary_sp.csv")
 ```
 我们将汇总的结果中**收益风险比大于4**的截取出来，如下图：
-![止盈逻辑回测汇总](https://segmentfault.com/img/bVcOC6p)
+![止盈逻辑回测汇总](../..assets/images/../../../assets/images/wtpy/wtpy052.png)
 由上图可以见，止盈逻辑对策略绩效的提升还是比较明显的，但是**当止盈点位在150点到230之间，收益风险比基本上达到稳定**，策略绩效提升约10%以上。
 
 ## 完整回测
@@ -240,11 +240,11 @@ def runStopAllOptimizer():
     optimizer.go(interval=0.2, out_marker_file="strategies.json",out_summary_file="total_summary_all.csv")
 ```
 回测结果汇总表如下：
-![止盈止损回测汇总](https://segmentfault.com/img/bVcOC7m)
+![止盈止损回测汇总](../..assets/images/../../../assets/images/wtpy/wtpy053.png)
 从上图可以看出来，止盈止损完整的逻辑，对于提高收益风险比还是有提升的，但是净利润还是会比无止盈止损的时候降低不少。
 我们再选择收益风险比最高的一组参数，看一下策略的绩效分析。
-![带止盈止损最优参数绩效](https://segmentfault.com/img/bVcOC7v)
+![带止盈止损最优参数绩效](../..assets/images/../../../assets/images/wtpy/wtpy054.png)
 最大回撤并没有比无止盈止损的逻辑低，反而直接损失了收益率。
 我们最后再看一下只有止盈逻辑的最优参数的绩效分析。
-![仅止盈的最优参数绩效](https://segmentfault.com/img/bVcOC7y)
+![仅止盈的最优参数绩效](../..assets/images/../../../assets/images/wtpy/wtpy055.png)
 综合上面我们可以看出来，止损逻辑并没有对策略绩效有比较正向的改善，反而止盈逻辑能锁定不少原本要回吐的利润。止损无效的原因何在，可能是因为止损点位的范围设置不合理，或者是因为别的原因，这个就不在本文的讨论范围了，有兴趣的读者可以自行研究一下。
