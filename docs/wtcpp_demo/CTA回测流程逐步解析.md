@@ -14,6 +14,82 @@ source: `{{ page.path }}`
     - holidays.json",
     - hots.json"
 
+config.json 大概长这样
+```json
+{
+    "replayer":{
+        "mode":"csv",
+        "path":"./storage/",
+        "stime":201905010900,
+        "etime":201910011500,
+        "basefiles":{
+            "session":"./common/sessions.json",
+            "commodity":"./common/commodities.json",
+            "contract":"./common/contracts.json",
+            "holiday":"./common/holidays.json",
+            "hot":"./common/hots.json"
+        },
+        "fees":"./common/fees.json"
+    },
+    "env":{
+        "mocker":"cta",
+        "slippage": 1
+    },
+    "cta":{
+        "module":"WtCtaStraFact.dll",
+        "strategy":{
+            "id": "dt_if",
+            "name": "DualThrust",
+            "params": {
+                "code": "CFFEX.IF.HOT",
+                "count": 50,
+                "period": "m5",
+                "days": 30,
+                "k1": 0.6,
+                "k2": 0.6,
+                "stock":false
+            }
+        }
+    }
+}
+```
+
+logcfg.json 大概长这样
+```json
+{
+    "root":{
+        "level":"debug",
+        "async":false,
+        "sinks":[
+            {
+                "type":"basic_file_sink",
+                "filename":"BtLogs/Runner.log",
+                "pattern":"[%Y.%m.%d %H:%M:%S - %-5l] %v",
+                "truncate":true
+            },
+            {
+                "type":"console_sink",
+                "pattern":"[%m.%d %H:%M:%S - %^%-5l%$] %v"
+            }
+        ]
+    },
+    "dyn_pattern":{
+        "strategy":{
+            "level":"debug",
+            "async":false,
+            "sinks":[
+                {
+                    "type":"basic_file_sink",
+                    "filename":"BtLogs/Strategy_%s.log",
+                    "pattern":"[%Y.%m.%d %H:%M:%S - %-5l] %v",
+                    "truncate":false
+                }
+            ]
+        }
+    }
+}
+```
+
 ### 2. 数据文件
 - storage目录
     - csv/CFFEX.IF.HOT_m5.csv
