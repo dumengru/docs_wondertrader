@@ -1,4 +1,4 @@
-# 回测引擎
+# 数据回放器
 
 source: `{{ page.path }}`
 
@@ -6,7 +6,7 @@ source: `{{ page.path }}`
 
 ### IDataSink
 
-回测引擎回调函数接口
+历史数据回放器回调函数接口
 
 ```cpp
 class IDataSink
@@ -70,7 +70,7 @@ public:
 
 ### HisDataReplayer
 
-回测引擎
+历史数据回放器
 
 ```cpp
 class HisDataReplayer
@@ -800,7 +800,7 @@ void HisDataReplayer::stop()
 	WTSLogger::warn("Terminating flag reset to true, backtesting will quit at next round");
 }
 
-// 
+// 回放准备
 bool HisDataReplayer::prepare()
 {
 	// 不能同时运行多个回测任务
@@ -818,7 +818,7 @@ bool HisDataReplayer::prepare()
 	_cur_time = (uint32_t)(_begin_time % 10000);
 	_cur_secs = 0;
 
-	// 为何传入的是 "TRADING"
+	// 为何传入的是 "TRADING"? 因为配置文件有 sessions.json
 	_cur_tdate = _bd_mgr.calcTradingDate(DEFAULT_SESSIONID, _cur_date, _cur_time, true);
 
 	if (_notifier)
