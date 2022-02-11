@@ -4,7 +4,7 @@ source: `{{ page.path }}`
 
 ## 准备工作
 
-1. 配置文件
+### 1. 配置文件
 - logcfg.json
 - config.json
 - common目录
@@ -14,11 +14,11 @@ source: `{{ page.path }}`
     - holidays.json",
     - hots.json"
 
-2. 数据文件
+### 2. 数据文件
 - storage目录
     - csv/CFFEX.IF.HOT_m5.csv
 
-3. 策略文件(dll文件)
+### 3. 策略文件(dll文件)
 - WtCtaStraFact.dll
 
 ```cpp
@@ -107,7 +107,7 @@ void WTSLogger::init(const char* propFile /* = "logcfg.json" */, bool isFile /* 
 	for (std::string& key : keys)
 	{
 		WTSVariant* cfgItem = cfg->get(key.c_str());
-        // 5. 记录策略日志
+        // 5. 添加策略日志
 		if (key == DYN_PATTERN)     // DYN_PATTERN = "dyn_pattern"
 		{
 			auto pkeys = cfgItem->memberNames();
@@ -116,7 +116,6 @@ void WTSLogger::init(const char* propFile /* = "logcfg.json" */, bool isFile /* 
 				WTSVariant* cfgPattern = cfgItem->get(pkey.c_str());
 				if (m_mapPatterns == NULL)
 					m_mapPatterns = LogPatterns::create();
-
 				m_mapPatterns->add(pkey.c_str(), cfgPattern, true);
 			}
 			continue;
@@ -135,6 +134,9 @@ void WTSLogger::init(const char* propFile /* = "logcfg.json" */, bool isFile /* 
 
 	m_bInited = true;           // 日志对象初始化完成标志
 }
+```
+```note
+5. m_mapPatterns 是一个map容器指针, 可以添加多个日志对象, 用来记录策略日志.(背后逻辑暂时不懂, 不重要)
 ```
 
 ### 2. 读取配置文件并转为 WTSVariant 类型
@@ -323,7 +325,7 @@ bool HisDataReplayer::prepare()
 	// 4. 调度器中的回调函数
 	_listener->handle_init();
 
-	// 5. 逻辑没搞明白, 欢迎指出
+	// 5. 如果没有tick数据就加载Bar数据
 	if (!_tick_enabled)
 		checkUnbars();
 
@@ -337,10 +339,8 @@ bool HisDataReplayer::prepare()
 2. 逻辑比较复杂, 可查看源码注释(搜索框输入: WTSBaseDataMgr::calcTradingDate, 如果注释有误, 欢迎QQ群提出)
 
 4. 调度器中的 handle_init 会调用 `this->on_init();`, 而 on_init() 又调用 `_strategy->on_init(this);`(注意: 这里又把调度器对象传递到策略中去了, 所以记得策略文件中的参数 CtaMocker 是怎么来的了吧。。。山路十八弯~)
-```
 
-```warning
-5. 等我看明白或者有人补充吧...(暂时不重要)
+5. 数据加载逻辑重要但是复杂(见下一部分内容)
 ```
 
 ### 8. 回放器回放历史数据
@@ -351,20 +351,25 @@ void HisDataReplayer::run(bool bNeedDump/* = false*/)
 	// 1. 如果没有时间调度任务, 则采用主K线回放的模式
 	if(_task == NULL)
 	{
-		// 3. 如果没有确定主K线,则确定一个周期最短的主K线
+		// 2. 如果没有确定主K线(多周期), 则确定一个周期最短的主K线
 		if (_main_key.empty() && !_bars_cache.empty())
 		{
+			// 2.1 假设回放的K线的周期是D1(日线数据)
 			WTSKlinePeriod minPeriod = KP_DAY;
 			uint32_t minTimes = 1;
+			// 2.2 遍历缓存中的K线数据
 			for(auto& m : _bars_cache)
 			{
+				// 2.3 获取自定义的K线列表结构体
 				const BarsList& barList = m.second;
+				// 2.4 当前周期小于D1则更新minPeriod和minTimes
 				if (barList._period < minPeriod)
 				{
 					minPeriod = barList._period;
 					minTimes = barList._times;
 					_main_key = m.first;
 				}
+				// 2.5 否则主K周期保持不变
 				else if(barList._period == minPeriod)
 				{
 					if(barList._times < minTimes)
@@ -377,18 +382,21 @@ void HisDataReplayer::run(bool bNeedDump/* = false*/)
 
 			WTSLogger::info("Main K bars automatic determined: %s", _main_key.c_str());
 		}
+
+		// 3. 确定主K后按照主K回放
 		if(!_main_key.empty())
 		{
-			//如果订阅了K线，则按照主K线进行回放
+			// 如果订阅了K线，则按照主K线进行回放
 			run_by_bars(bNeedDump);
 		}
+		// 4. 没有主K按照tick回放
 		else if(_tick_enabled)
 		{
 			run_by_ticks(bNeedDump);
 		}
 		else
 		{
-			//WTSLogger::info("没有订阅主力K线且未开放tick回测,回放直接退出");
+			// WTSLogger::info("没有订阅主力K线且未开放tick回测, 回放直接退出");
 			WTSLogger::info("Main K bars not subscribed and backtesting of tick data not available , replaying done");
 			_listener->handle_replay_done();
 			if (_notifier)
@@ -407,8 +415,129 @@ void HisDataReplayer::run(bool bNeedDump/* = false*/)
 ```note
 1. 数据回放有两种模式: 时间调度和主K回放
 
-2. 
+2. 实际就是K线周期大小的比较过程, 最小的K线周期作为主K.(这里的逻辑可能有点小问题, 因为它写死了最小级别K线是D1, D1以上级别的回测无能为力. 也许可以重载运算符, 专门比较K线周期, 这样D1以上周期也可以回测. 不过考虑到实际情况也许用处不大)
+
+3. 数据回放逻辑重要且复杂(见下一部分内容)
 ```
 
 ### 9. 停止输出日志
 
+```cpp
+void WTSLogger::stop()
+{
+	m_bStopped = true;
+	// 1. 释放 m_mmapPatterns 对象
+	if (m_mapPatterns)
+		m_mapPatterns->release();
+	spdlog::shutdown();
+}
+```
+
+## 历史数据回放器中重要的代码逻辑
+
+### 加载Bars数据(checkUnbars)
+
+```cpp
+void HisDataReplayer::checkUnbars()
+{
+	// 1. 加载Tick数据订阅表
+	for(auto& m : _tick_sub_map)
+	{
+		const char* stdCode = m.first.c_str();
+		bool bHasBars = false;
+		// 2. 遍历未订阅的K线缓存
+		for(auto& m : _unbars_cache)
+		{
+			const std::string& key = m.first;
+			auto ay = StrUtil::split(key, "#");
+			if (ay[0].compare(stdCode) == 0)
+			{
+				bHasBars = true;
+				break;
+			}
+		}
+		if(bHasBars)
+			continue;
+
+		for (auto& m : _bars_cache)
+		{
+			const std::string& key = m.first;
+			auto ay = StrUtil::split(key, "#");
+			if (ay[0].compare(stdCode) == 0)
+			{
+				bHasBars = true;
+				break;
+			}
+		}
+
+		if (bHasBars)
+			continue;
+
+		//如果订阅了tick,但是没有对应的K线数据,则自动加载1分钟线到内存中
+		bool bHasHisData = false;
+		std::string key = StrUtil::printf("%s#m#1", stdCode);
+
+		/*
+		 *	By Wesley @ 2021.12.20
+		 *	先从extloader加载最终的K线数据
+		 *	如果加载不到，再从配置的历史数据存储引擎加载数据
+		 */
+		if (NULL != _bt_loader)
+		{
+			bHasHisData = cacheFinalBarsFromLoader(key, stdCode, KP_Minute1, false);
+		}
+
+		if(bHasHisData)
+		{
+			if (_mode == "csv")
+			{
+				bHasHisData = cacheRawBarsFromCSV(key, stdCode, KP_Minute1, false);
+			}
+			else
+			{
+				bHasHisData = cacheRawBarsFromBin(key, stdCode, KP_Minute1, false);
+			}
+		}
+		
+		if (!bHasHisData)
+			continue;
+
+		WTSSessionInfo* sInfo = get_session_info(stdCode, true);
+
+		BarsList& kBlkPair = _unbars_cache[key];
+		
+		//还没有经过初始定位
+		WTSBarStruct bar;
+		bar.date = _cur_tdate;
+		bar.time = (_cur_date - 19900000) * 10000 + _cur_time;
+
+		auto it = std::lower_bound(kBlkPair._bars.begin(), kBlkPair._bars.end(), bar, [](const WTSBarStruct& a, const WTSBarStruct& b) {
+			return a.time < b.time;
+		});
+
+		uint32_t eIdx = it - kBlkPair._bars.begin();
+
+		if (it != kBlkPair._bars.end())
+		{
+			WTSBarStruct& curBar = *it;
+			if (curBar.time > bar.time)
+			{
+				if (eIdx > 0)
+				{
+					it--;
+					eIdx--;
+				}
+			}
+			kBlkPair._cursor = eIdx + 1;
+		}
+	}
+}
+```
+
+### 主K回放(run_by_bars)
+
+
+### Tick回放(run_by_ticks)
+
+
+### 时间调度(run_by_tasks)
