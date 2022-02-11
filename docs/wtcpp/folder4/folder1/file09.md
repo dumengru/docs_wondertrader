@@ -812,6 +812,7 @@ bool HisDataReplayer::prepare()
 
 	_running = true;
 	_terminated = false;
+	// 将所有变量和数据缓存初始化
 	reset();
 
 	_cur_date = (uint32_t)(_begin_time / 10000);
@@ -2031,8 +2032,7 @@ WTSKlineSlice* HisDataReplayer::get_kline_slice(const char* stdCode, const char*
 	if (isMain)
 		_main_key = key;
 
-	//if(!_tick_enabled)
-	//不做判断,主要为了防止没有tick数据,而采用第二方案
+	// 添加_ticker_keys
 	{
 		if(_ticker_keys.find(stdCode) == _ticker_keys.end())
 			_ticker_keys[stdCode] = key;
@@ -2053,6 +2053,7 @@ WTSKlineSlice* HisDataReplayer::get_kline_slice(const char* stdCode, const char*
 		}
 	}
 
+	// 判断K线周期
 	WTSKlinePeriod kp;
 	uint32_t realTimes = times;
 	if (strcmp(period, "m") == 0)
@@ -2070,13 +2071,17 @@ WTSKlineSlice* HisDataReplayer::get_kline_slice(const char* stdCode, const char*
 	else
 		kp = KP_DAY;
 
+	// 是否是日线
 	bool isDay = kp == KP_DAY;
 
+	// 判断是否已有K线缓存
 	auto it = _bars_cache.find(key);
 	bool bHasHisData = false;
 	bool bHasCache = (it != _bars_cache.end());
+	// 如果没有缓存
 	if (!bHasCache)
 	{
+		// 时间周期不等于(1min,1d,5min的倍数)
 		if (realTimes != 1)
 		{
 			std::string rawKey = StrUtil::printf("%s#%s#%u", stdCode, period, 1);
@@ -2117,7 +2122,7 @@ WTSKlineSlice* HisDataReplayer::get_kline_slice(const char* stdCode, const char*
 			{
 				bHasHisData = cacheFinalBarsFromLoader(key, stdCode, kp);
 			}
-
+			// 从csv或bin中加载数据
 			if(!bHasHisData)
 			{
 				if (_mode == "csv")

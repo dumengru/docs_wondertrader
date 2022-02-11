@@ -123,20 +123,20 @@ public:
 
 protected:
 	uint32_t			_context_id;    // 策略上下文ID
-	HisDataReplayer*	_replayer;      // 回测引擎
+	HisDataReplayer*	_replayer;      // 回放器
 	uint64_t		_total_calc_time;	// 总计算时间
 	uint32_t		_emit_times;		// 总计算次数
 	int32_t			_slippage;			// 成交滑点
 	uint32_t		_schedule_times;	// 调度次数
-	std::string		_main_key;          // 
+	std::string		_main_key;          // 是否是主K线
 
 	typedef struct _KlineTag
 	{
 		bool			_closed;
 		_KlineTag() :_closed(false){}
-	} KlineTag;
+	} KlineTag;		// K线标签
 	typedef faster_hashmap<std::string, KlineTag> KlineTags;
-	KlineTags	_kline_tags;            // 
+	KlineTags	_kline_tags;            // K线标签字典
 
 	typedef faster_hashmap<std::string, double> PriceMap;
 	PriceMap		_price_map;         // 
@@ -1118,7 +1118,7 @@ void CtaMocker::stra_exit_short(const char* stdCode, double qty, const char* use
 	}
 }
 
-// 调用回测引擎获取当前价格
+// 调用回放器获取当前价格
 double CtaMocker::stra_get_price(const char* stdCode)
 {
 	if (_replayer)
@@ -1336,21 +1336,23 @@ void CtaMocker::do_set_position(const char* stdCode, double qty, double price /*
 	}
 }
 
+// 回调回放器加载bar数据
 WTSKlineSlice* CtaMocker::stra_get_bars(const char* stdCode, const char* period, uint32_t count, bool isMain /* = false */)
 {
-	std::string key = StrUtil::printf("%s#%s", stdCode, period);
-	std::string basePeriod = "";
+	std::string key = StrUtil::printf("%s#%s", stdCode, period);	// config.json文件中的"code":"CFFEX.IF.HOT", "period": "m5"
+	std::string basePeriod = "";					// 记录 m, 即分钟级别回测
 	uint32_t times = 1;
 	if (strlen(period) > 1)
 	{
 		basePeriod.append(period, 1);
-		times = strtoul(period + 1, NULL, 10);
+		times = strtoul(period + 1, NULL, 10);		// 提取 5, 即5分钟
 	}
 	else
 	{
 		basePeriod = period;
 		key.append("1");
 	}
+	// 确定主K
 	if (isMain)
 	{
 		if (_main_key.empty())
@@ -1358,24 +1360,30 @@ WTSKlineSlice* CtaMocker::stra_get_bars(const char* stdCode, const char* period,
 		else if (_main_key != key)
 			throw std::runtime_error("Main k bars can only be setup once");
 	}
-
+	// 调用回放器获取K线切片
 	WTSKlineSlice* kline = _replayer->get_kline_slice(stdCode, basePeriod.c_str(), count, times, isMain);
+
 	bool bFirst = (_kline_tags.find(key) == _kline_tags.end());
 	KlineTag& tag = _kline_tags[key];
 	tag._closed = false;
 
 	if (kline)
 	{
+		// 提取标准合约代码
 		CodeHelper::CodeInfo cInfo = CodeHelper::extractStdCode(stdCode);
+
+		// 如果是股票 ...
 		std::string realCode = stdCode;
 		if(cInfo._category == CC_Stock && cInfo.isExright())
 			realCode = StrUtil::printf("%s.%s.%s", cInfo._exchg, cInfo._product, cInfo._code);
+		
+		// 订阅tick数据
 		_replayer->sub_tick(id(), realCode.c_str());
 	}
 	return kline;
 }
 
-// 回调回测引擎对应的函数
+// 回调回放器对应的函数
 WTSTickSlice* CtaMocker::stra_get_ticks(const char* stdCode, uint32_t count)
 {
 	return _replayer->get_tick_slice(stdCode, count);

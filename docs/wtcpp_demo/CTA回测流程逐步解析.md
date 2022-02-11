@@ -375,7 +375,6 @@ inline void register_sink(IDataSink* listener, const char* sinkName)
 ### 7. 回放器准备回放历史数据
 
 ```cpp
-
 bool HisDataReplayer::prepare()
 {
 	if (_running)
@@ -385,7 +384,7 @@ bool HisDataReplayer::prepare()
 	}
 	_running = true;
 	_terminated = false;
-	reset();
+	reset();		// 数据全部初始化
 
 	// 1. begin_time是整数型日期(精确到分, 在配置文件中)如: 201905010900
 	_cur_date = (uint32_t)(_begin_time / 10000);
@@ -491,7 +490,7 @@ void HisDataReplayer::run(bool bNeedDump/* = false*/)
 ```note
 1. 数据回放有两种模式: 时间调度和主K回放
 
-2. 实际就是K线周期大小的比较过程, 最小的K线周期作为主K.(这里的逻辑可能有点小问题, 因为它写死了最小级别K线是D1, D1以上级别的回测无能为力. 也许可以重载运算符, 专门比较K线周期, 这样D1以上周期也可以回测. 不过考虑到实际情况也许用处不大)
+2. 实际就是K线周期大小的比较过程, 最小的K线周期作为主K.(这里的逻辑可能有点小问题)
 
 3. 数据回放逻辑重要且复杂(见下一部分内容)
 ```
@@ -513,15 +512,117 @@ void WTSLogger::stop()
 
 ### 加载Bars数据(checkUnbars)
 
+**_tick_sub_map订阅路径**
+
+checkUnbars函数第一句代码就是遍历 `_tick_sub_map`, 但是 `_tick_sub_map`从哪来?
+
+数据回放器准备阶段 `bool HisDataReplayer::prepare()` 中有两句代
+```cpp
+reset()		// 初始化变量
+...
+// 4. 调度器中的回调函数
+_listener->handle_init();
+```
+1. `reset()`之后 `_tick_sub_map` 首先被初始化
+2. `_listener->handle_init();`函数调用路径如下:
+	1. `_listener->handle_init();`
+	2. `this->on_init();`
+	3. `_strategy->on_init(this);`
+3. 到这里已经进入策略文件中了, 具体代码如下
+```cpp
+void WtStraDualThrust::on_init(ICtaStraCtx* ctx)
+{
+	std::string code = _code;
+	if (_isstk)
+		code += "Q";
+	WTSKlineSlice *kline = ctx->stra_get_bars(code.c_str(), _period.c_str(), _count, true);
+	if (kline == NULL)
+	{
+		//这里可以输出一些日志
+		return;
+	}
+	kline->release();
+}
+```
+4. 这里又回调了调度器函数 `ctx->stra_get_bars;`, 具体内容如下
+```cpp
+WTSKlineSlice* CtaMocker::stra_get_bars(const char* stdCode, const char* period, uint32_t count, bool isMain /* = false */)
+{
+	std::string key = StrUtil::printf("%s#%s", stdCode, period);	// config.json文件中的"code":"CFFEX.IF.HOT", "period": "m5"
+	std::string basePeriod = "";					// 记录 m, 即分钟级别回测
+	uint32_t times = 1;
+	if (strlen(period) > 1)
+	{
+		basePeriod.append(period, 1);
+		times = strtoul(period + 1, NULL, 10);		// 提取 5, 即5分钟
+	}
+	else
+	{
+		basePeriod = period;
+		key.append("1");
+	}
+	// 确定主K
+	if (isMain)
+	{
+		if (_main_key.empty())
+			_main_key = key;
+		else if (_main_key != key)
+			throw std::runtime_error("Main k bars can only be setup once");
+	}
+	// 调用回放器获取K线切片
+	WTSKlineSlice* kline = _replayer->get_kline_slice(stdCode, basePeriod.c_str(), count, times, isMain);
+
+	bool bFirst = (_kline_tags.find(key) == _kline_tags.end());
+	KlineTag& tag = _kline_tags[key];
+	tag._closed = false;
+
+	if (kline)
+	{
+		// 提取标准合约代码
+		CodeHelper::CodeInfo cInfo = CodeHelper::extractStdCode(stdCode);
+
+		// 如果是股票 ...
+		std::string realCode = stdCode;
+		if(cInfo._category == CC_Stock && cInfo.isExright())
+			realCode = StrUtil::printf("%s.%s.%s", cInfo._exchg, cInfo._product, cInfo._code);
+		
+		// 订阅tick数据
+		_replayer->sub_tick(id(), realCode.c_str());
+	}
+	return kline;
+}
+```
+5. 最后一句`_replayer->sub_tick`又回调了回放器函数, 具体如下
+```cpp
+void HisDataReplayer::sub_tick(uint32_t sid, const char* stdCode)
+{
+	if (strlen(stdCode) == 0)
+		return;
+	// 订阅tick行情
+	SIDSet& sids = _tick_sub_map[stdCode];
+	sids.insert(sid);
+}
+```
+```tip
+整个逻辑在回放器 HisDataReplayer, 调度器 CtaMocker 和策略对象 WtStraDualThrust 中来回切换, 感兴趣建议自己打断点细细品味.
+```
+
+**_bars_cache加载路径**
+
+还是 `_tick_sub_map` 订阅的那条路径, 不过从第4步开始分叉, 在 `WTSKlineSlice* kline = _replayer->get_kline_slice`中进入到了回放器获取K线切片. 这里在加载数据的过程中填充了 `bars_cache`.
+
+**数据加载逻辑**
+
+### 
 ```cpp
 void HisDataReplayer::checkUnbars()
 {
-	// 1. 加载Tick数据订阅表
+	// 1. 遍历Tick数据订阅表
 	for(auto& m : _tick_sub_map)
 	{
 		const char* stdCode = m.first.c_str();
 		bool bHasBars = false;
-		// 2. 遍历未订阅的K线缓存
+		// 2. 遍历未订阅的K线缓存(空)
 		for(auto& m : _unbars_cache)
 		{
 			const std::string& key = m.first;
@@ -535,6 +636,7 @@ void HisDataReplayer::checkUnbars()
 		if(bHasBars)
 			continue;
 
+		// 3. 遍历K线缓存
 		for (auto& m : _bars_cache)
 		{
 			const std::string& key = m.first;
@@ -545,7 +647,7 @@ void HisDataReplayer::checkUnbars()
 				break;
 			}
 		}
-
+		
 		if (bHasBars)
 			continue;
 
@@ -563,7 +665,7 @@ void HisDataReplayer::checkUnbars()
 			bHasHisData = cacheFinalBarsFromLoader(key, stdCode, KP_Minute1, false);
 		}
 
-		if(bHasHisData)
+		if(!bHasHisData)
 		{
 			if (_mode == "csv")
 			{
