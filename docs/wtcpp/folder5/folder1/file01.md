@@ -1,14 +1,22 @@
-# 路径处理
+# WtHelper.h
 
 source: `{{ page.path }}`
 
-## WtHelper.h
-
-处理工作路径和输出路径
-
-### WtHelper
-
 ```cpp
+/*!
+ * \file WtHelper.h
+ * \project	WonderTrader
+ *
+ * \author Wesley
+ * \date 2020/03/30
+ * 
+ * \brief 
+ */
+#pragma once
+#include <string>
+#include <stdint.h>
+
+// 处理工作路径和输出路径
 class WtHelper
 {
 public:
@@ -28,11 +36,29 @@ private:
 
 ## WtHelper.cpp
 
-实现逻辑
-
 ```cpp
+/*!
+ * \file WtHelper.cpp
+ * \project	WonderTrader
+ *
+ * \author Wesley
+ * \date 2020/03/30
+ * 
+ * \brief 
+ */
+#include "WtHelper.h"
+
+#include "../Share/StrUtil.hpp"
+#include <boost/filesystem.hpp>
+
+#ifdef _MSC_VER
+#include <direct.h>
+#else	//UNIX
+#include <unistd.h>
+#endif
+
 std::string WtHelper::_inst_dir;
-std::string WtHelper::_out_dir = "./outputs_bt";
+std::string WtHelper::_out_dir = "./outputs_bt/";
 
 // 获取当前工作绝对路径
 std::string WtHelper::getCWD()

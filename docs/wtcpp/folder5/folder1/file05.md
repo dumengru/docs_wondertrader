@@ -1,37 +1,69 @@
-# CTA策略调度器
+# CtaMocker.h
 
 source: `{{ page.path }}`
 
-```tip
-**策略接口调用逻辑**
+```cpp
+/*!
+ * \file CtaMocker.h
+ * \project	WonderTrader
+ *
+ * \author Wesley
+ * \date 2020/03/30
+ * 
+ * \brief 
+ */
+#pragma once
+#include <sstream>
+#include <atomic>
+#include "HisDataReplayer.h"
+
+#include "../Includes/FasterDefs.h"
+#include "../Includes/ICtaStraCtx.h"
+#include "../Includes/CtaStrategyDefs.h"
+#include "../Includes/WTSDataDef.hpp"
+
+#include "../Share/DLLHelper.hpp"
+#include "../Share/StdUtils.hpp"
+#include "../Share/fmtlib.h"
+
+/*
+策略接口调用逻辑
 
 1. 策略调度器都会继承 `ICtaStraCtx`(上下文管理器接口) 和 `IDataSink`(历史数据回放器回调函数接口), 并实现相应的方法
-
 2. 其中 `IDataSink` 中主要是回调函数接口, 在调度器中实现接口的过程中, 实现 `IDataSink` 的回调函数都会调用 `ICtaStraCtx` 接口对应的函数(如 `handle_init()` 中调用 `this->on_init()`)
-
 3. 实现 `ICtaStraCtx` 接口的函数在添加部分逻辑之后又会调用对应策略中的函数(如 `on_init()` 中调用 `_strategy->on_init(this);`)
-
 4. 因此策略中的 `on_init()` 等函数实际是整个回测框架的最后一步
-```
+*/
 
-## CtaMocker.h
+NS_WTP_BEGIN
+class EventNotifier;
+NS_WTP_END
 
-```cpp
-const char COND_ACTION_OL = 0;	    //开多
-const char COND_ACTION_CL = 1;	    //平多
-const char COND_ACTION_OS = 2;	    //开空
-const char COND_ACTION_CS = 3;	    //平空
-const char COND_ACTION_SP = 4;	    //直接设置仓位
+USING_NS_WTP;
+
+class HisDataReplayer;
+class CtaStrategy;
+
+const char COND_ACTION_OL = 0;	//开多
+const char COND_ACTION_CL = 1;	//平多
+const char COND_ACTION_OS = 2;	//开空
+const char COND_ACTION_CS = 3;	//平空
+const char COND_ACTION_SP = 4;	//直接设置仓位
 
 typedef struct _CondEntrust
 {
 	WTSCompareField _field;
 	WTSCompareType	_alg;
 	double			_target;
+
 	double			_qty;
+
 	char			_action;	//0-开多,1-平多,2-开空,3-平空
+
 	char			_code[MAX_INSTRUMENT_LENGTH];
 	char			_usertag[32];
+
+
 	_CondEntrust()
 	{
 		memset(this, 0, sizeof(_CondEntrust));
@@ -41,6 +73,7 @@ typedef struct _CondEntrust
 
 typedef std::vector<CondEntrust>	CondList;
 typedef faster_hashmap<std::string, CondList>	CondEntrustMap;
+
 
 class CtaMocker : public ICtaStraCtx, public IDataSink
 {
@@ -54,9 +87,12 @@ private:
 	inline void	log_trade(const char* stdCode, bool isLong, bool isOpen, uint64_t curTime, double price, double qty, const char* userTag = "", double fee = 0.0, uint32_t barNo = 0);
 	inline void	log_close(const char* stdCode, bool isLong, uint64_t openTime, double openpx, uint64_t closeTime, double closepx, double qty,
 		double profit, double maxprofit, double maxloss, double totalprofit = 0, const char* enterTag = "", const char* exitTag = "", uint32_t openBarNo = 0, uint32_t closeBarNo = 0);
+
 	void	update_dyn_profit(const char* stdCode, double price);
+
 	void	do_set_position(const char* stdCode, double qty, double price = 0.0, const char* userTag = "", bool bTriggered = false);
 	void	append_signal(const char* stdCode, double qty, const char* userTag = "", double price = 0.0);
+
 	inline CondList& get_cond_entrusts(const char* stdCode);
 
 public:
@@ -66,18 +102,21 @@ public:
 	bool	step_calc();
 
 public:
-	// IDataSink 接口实现
+	//IDataSink接口实现
 	virtual void	handle_tick(const char* stdCode, WTSTickData* curTick) override;
 	virtual void	handle_bar_close(const char* stdCode, const char* period, uint32_t times, WTSBarStruct* newBar) override;
 	virtual void	handle_schedule(uint32_t uDate, uint32_t uTime) override;
+
 	virtual void	handle_init() override;
 	virtual void	handle_session_begin(uint32_t curTDate) override;
 	virtual void	handle_session_end(uint32_t curTDate) override;
+
 	virtual void	handle_replay_done() override;
 
-	// ICtaStraCtx 接口实现
+	//ICtaStraCtx 接口实现
 	virtual uint32_t id() { return _context_id; }
-	    //回调函数
+
+	//回调函数
 	virtual void on_init() override;
 	virtual void on_session_begin(uint32_t curTDate) override;
 	virtual void on_session_end(uint32_t curTDate) override;
@@ -85,68 +124,107 @@ public:
 	virtual void on_bar(const char* stdCode, const char* period, uint32_t times, WTSBarStruct* newBar) override;
 	virtual bool on_schedule(uint32_t curDate, uint32_t curTime) override;
 	virtual void enum_position(FuncEnumCtaPosCallBack cb) override;
+
 	virtual void on_tick_updated(const char* stdCode, WTSTickData* newTick) override;
 	virtual void on_bar_close(const char* stdCode, const char* period, WTSBarStruct* newBar) override;
 	virtual void on_calculate(uint32_t curDate, uint32_t curTime) override;
-        // 策略接口
+
+	//策略接口
 	virtual void stra_enter_long(const char* stdCode, double qty, const char* userTag = "", double limitprice = 0.0, double stopprice = 0.0) override;
 	virtual void stra_enter_short(const char* stdCode, double qty, const char* userTag = "", double limitprice = 0.0, double stopprice = 0.0) override;
 	virtual void stra_exit_long(const char* stdCode, double qty, const char* userTag = "", double limitprice = 0.0, double stopprice = 0.0) override;
 	virtual void stra_exit_short(const char* stdCode, double qty, const char* userTag = "", double limitprice = 0.0, double stopprice = 0.0) override;
-        // 获取策略相关信息
+
 	virtual double stra_get_position(const char* stdCode, bool bOnlyValid = false, const char* userTag = "") override;
 	virtual void stra_set_position(const char* stdCode, double qty, const char* userTag = "", double limitprice = 0.0, double stopprice = 0.0) override;
 	virtual double stra_get_price(const char* stdCode) override;
+
 	virtual uint32_t stra_get_tdate() override;
 	virtual uint32_t stra_get_date() override;
 	virtual uint32_t stra_get_time() override;
+
 	virtual double stra_get_fund_data(int flag = 0) override;
+
 	virtual uint64_t stra_get_first_entertime(const char* stdCode) override;
 	virtual uint64_t stra_get_last_entertime(const char* stdCode) override;
 	virtual uint64_t stra_get_last_exittime(const char* stdCode) override;
 	virtual double stra_get_last_enterprice(const char* stdCode) override;
 	virtual double stra_get_position_avgpx(const char* stdCode) override;
 	virtual double stra_get_position_profit(const char* stdCode) override;
+
 	virtual uint64_t stra_get_detail_entertime(const char* stdCode, const char* userTag) override;
 	virtual double stra_get_detail_cost(const char* stdCode, const char* userTag) override;
 	virtual double stra_get_detail_profit(const char* stdCode, const char* userTag, int flag = 0) override;
+
 	virtual WTSCommodityInfo* stra_get_comminfo(const char* stdCode) override;
 	virtual WTSKlineSlice*	stra_get_bars(const char* stdCode, const char* period, uint32_t count, bool isMain = false) override;
 	virtual WTSTickSlice*	stra_get_ticks(const char* stdCode, uint32_t count) override;
 	virtual WTSTickData*	stra_get_last_tick(const char* stdCode) override;
+
 	virtual void stra_sub_ticks(const char* stdCode) override;
-	virtual void stra_log_info(const char* fmt, ...) override;
-	virtual void stra_log_debug(const char* fmt, ...) override;
-	virtual void stra_log_error(const char* fmt, ...) override;
+
+	virtual void stra_log_info(const char* message) override;
+	virtual void stra_log_debug(const char* message) override;
+	virtual void stra_log_error(const char* message) override;
+
 	virtual void stra_save_user_data(const char* key, const char* val) override;
+
 	virtual const char* stra_load_user_data(const char* key, const char* defVal = "") override;
 
+private:
+	template<typename... Args>
+	void log_debug(const char* format, const Args& ...args)
+	{
+		std::string s = fmt::sprintf(format, args...);
+		stra_log_debug(s.c_str());
+	}
+
+	template<typename... Args>
+	void log_info(const char* format, const Args& ...args)
+	{
+		std::string s = fmt::sprintf(format, args...);
+		stra_log_info(s.c_str());
+	}
+
+	template<typename... Args>
+	void log_error(const char* format, const Args& ...args)
+	{
+		std::string s = fmt::sprintf(format, args...);
+		stra_log_error(s.c_str());
+	}
+
 protected:
-	uint32_t			_context_id;    // 策略上下文ID
-	HisDataReplayer*	_replayer;      // 回放器
-	uint64_t		_total_calc_time;	// 总计算时间
-	uint32_t		_emit_times;		// 总计算次数
-	int32_t			_slippage;			// 成交滑点
-	uint32_t		_schedule_times;	// 调度次数
-	std::string		_main_key;          // 是否是主K线
+	uint32_t			_context_id;	// 策略管理器ID
+	HisDataReplayer*	_replayer;		// 回放器
+
+	uint64_t		_total_calc_time;	//总计算时间
+	uint32_t		_emit_times;		//总计算次数
+
+	int32_t			_slippage;			//成交滑点
+
+	uint32_t		_schedule_times;	//调度次数
+
+	std::string		_main_key;			// 是否是主K线
 
 	typedef struct _KlineTag
 	{
 		bool			_closed;
+
 		_KlineTag() :_closed(false){}
-	} KlineTag;		// K线标签
+
+	} KlineTag;
 	typedef faster_hashmap<std::string, KlineTag> KlineTags;
-	KlineTags	_kline_tags;            // K线标签字典
+	KlineTags	_kline_tags;		// K线标签字典
 
 	typedef faster_hashmap<std::string, double> PriceMap;
-	PriceMap		_price_map;         // 
+	PriceMap		_price_map;
 
 	typedef struct _DetailInfo
 	{
 		bool		_long;
-		double		_prlume;
-		uint64_t	_opice;
-		double		_voentime;
+		double		_price;
+		double		_volume;
+		uint64_t	_opentime;
 		uint32_t	_opentdate;
 		double		_max_profit;
 		double		_max_loss;
@@ -158,7 +236,7 @@ protected:
 		{
 			memset(this, 0, sizeof(_DetailInfo));
 		}
-	} DetailInfo;                       // 
+	} DetailInfo;
 
 	typedef struct _PosInfo
 	{
@@ -168,7 +246,9 @@ protected:
 		uint64_t	_last_entertime;
 		uint64_t	_last_exittime;
 		double		_frozen;
+
 		std::vector<DetailInfo> _details;
+
 		_PosInfo()
 		{
 			_volume = 0;
@@ -178,7 +258,7 @@ protected:
 		}
 
 		inline double valid() const { return _volume - _frozen; }
-	} PosInfo;                      // 持仓信息
+	} PosInfo;
 	typedef faster_hashmap<std::string, PosInfo> PositionMap;
 	PositionMap		_pos_map;
 	double	_total_closeprofit;
@@ -191,6 +271,7 @@ protected:
 		double		_desprice;
 		bool		_triggered;
 		uint64_t	_gentime;
+
 		_SigInfo()
 		{
 			_volume = 0;
@@ -199,19 +280,21 @@ protected:
 			_triggered = false;
 			_gentime = 0;
 		}
-	} SigInfo;
+	}SigInfo;
 	typedef faster_hashmap<std::string, SigInfo>	SignalMap;
 	SignalMap		_sig_map;			// 信号信息
 
-	std::stringstream	_trade_logs;    // 成交记录: trades.csv
-	std::stringstream	_close_logs;    // 平仓记录: closes.csv
-	std::stringstream	_fund_logs;     // 资金记录: funds.csv
-	std::stringstream	_sig_logs;      // 开仓记录: signals.csv
-	CondEntrustMap	_condtions;         // 条件列表
+	std::stringstream	_trade_logs;	// 成交记录: trades.csv
+	std::stringstream	_close_logs;	// 平仓记录: closes.csv
+	std::stringstream	_fund_logs;		// 资金记录: funds.csv
+	std::stringstream	_sig_logs;		// 开仓记录: signals.csv
 
+	CondEntrustMap	_condtions;			// 条件列表
+
+	//是否处于调度中的标记
 	bool			_is_in_schedule;	//是否在自动调度中
 
-	// 用户数据
+	//用户数据
 	typedef faster_hashmap<std::string, std::string> StringHashMap;
 	StringHashMap	_user_datas;
 	bool			_ud_modified;
@@ -221,12 +304,14 @@ protected:
 		double	_total_profit;
 		double	_total_dynprofit;
 		double	_total_fees;
+
 		_StraFundInfo()
 		{
 			memset(this, 0, sizeof(_StraFundInfo));
 		}
-	} StraFundInfo;                     
-	StraFundInfo		_fund_info;     // 策略资金详情
+	} StraFundInfo;
+
+	StraFundInfo		_fund_info;		// 策略资金详情
 
 	typedef struct _StraFactInfo
 	{
@@ -235,41 +320,75 @@ protected:
 		ICtaStrategyFact*	_fact;
 		FuncCreateStraFact	_creator;
 		FuncDeleteStraFact	_remover;
+
 		_StraFactInfo()
 		{
 			_module_inst = NULL;
 			_fact = NULL;
 		}
+
 		~_StraFactInfo()
 		{
 			if (_fact)
 				_remover(_fact);
 		}
 	} StraFactInfo;
-	StraFactInfo	_factory;           // 策略工厂详情
-	CtaStrategy*	_strategy;          // cta策略指针
-	EventNotifier*	_notifier;          // 消息指针
+	StraFactInfo	_factory;		// 策略工厂详情
+
+	CtaStrategy*	_strategy;		// 策略指针
+	EventNotifier*	_notifier;		// 消息指针
+
 	StdUniqueMutex	_mtx_calc;
 	StdCondVariable	_cond_calc;
-	bool			_has_hook;		    //这是人为控制是否启用钩子
-	bool			_hook_valid;	    //这是根据是否是异步回测模式而确定钩子是否可用
+	bool			_has_hook;		//这是人为控制是否启用钩子
+	bool			_hook_valid;	//这是根据是否是异步回测模式而确定钩子是否可用
 	std::atomic<uint32_t>		_cur_step;	//临时变量，用于控制状态
-	bool			_in_backtest;			// 回测是否结束
+
+	bool			_in_backtest;	// 回测是否结束
 	bool			_wait_calc;
-	bool			_persist_data;			// 是否保存数据
+
+	bool			_persist_data;	// 是否保存数据
 };
 ```
 
 ## CtaMocker.cpp
 
 ```cpp
+/*!
+ * \file CtaMocker.cpp
+ * \project	WonderTrader
+ *
+ * \author Wesley
+ * \date 2020/03/30
+ * 
+ * \brief 
+ */
+#include "CtaMocker.h"
+#include "WtHelper.h"
+#include "EventNotifier.h"
+
+#include <exception>
+#include <boost/filesystem.hpp>
+
+#include "../Includes/WTSContractInfo.hpp"
+#include "../Includes/WTSSessionInfo.hpp"
+#include "../Includes/WTSVariant.hpp"
+#include "../Share/CodeHelper.hpp"
+#include "../Share/decimal.h"
+#include "../Share/StrUtil.hpp"
+
+#include "../WTSTools/WTSLogger.h"
+
+#include <rapidjson/document.h>
+namespace rj = rapidjson;
+
 const char* CMP_ALG_NAMES[] =
 {
 	"＝",
-	"＞",
-	"＜",
-	"≥",
-	"≤"
+	">",
+	"<",
+	">=",
+	"<="
 };
 
 const char* ACTION_NAMES[] =
@@ -287,6 +406,7 @@ inline uint32_t makeCtxId()
 	static std::atomic<uint32_t> _auto_context_id{ 1 };
 	return _auto_context_id.fetch_add(1);
 }
+
 
 CtaMocker::CtaMocker(HisDataReplayer* replayer, const char* name, int32_t slippage /* = 0 */, bool persistData /* = true */, EventNotifier* notifier /* = NULL */)
 	: ICtaStraCtx(name)
@@ -310,8 +430,10 @@ CtaMocker::CtaMocker(HisDataReplayer* replayer, const char* name, int32_t slippa
 	_context_id = makeCtxId();
 }
 
+
 CtaMocker::~CtaMocker()
-{}
+{
+}
 
 // 保存信息到本地
 void CtaMocker::dump_outputs()
@@ -327,24 +449,22 @@ void CtaMocker::dump_outputs()
 	// 创建各类csv文件
 	std::string filename = folder + "trades.csv";
 	std::string content = "code,time,direct,action,price,qty,tag,fee,barno\n";
-	content += _trade_logs.str();
+	if(!_trade_logs.str().empty()) content += _trade_logs.str();
 	StdFile::write_file_content(filename.c_str(), (void*)content.c_str(), content.size());
 
 	filename = folder + "closes.csv";
 	content = "code,direct,opentime,openprice,closetime,closeprice,qty,profit,maxprofit,maxloss,totalprofit,entertag,exittag,openbarno,closebarno\n";
-	content += _close_logs.str();
+	if (!_close_logs.str().empty()) content += _close_logs.str();
 	StdFile::write_file_content(filename.c_str(), (void*)content.c_str(), content.size());
-
 
 	filename = folder + "funds.csv";
 	content = "date,closeprofit,positionprofit,dynbalance,fee\n";
-	content += _fund_logs.str();
+	if (!_fund_logs.str().empty()) content += _fund_logs.str();
 	StdFile::write_file_content(filename.c_str(), (void*)content.c_str(), content.size());
-
 
 	filename = folder + "signals.csv";
 	content = "code,target,sigprice,gentime,usertag\n";
-	content += _sig_logs.str();
+	if (!_sig_logs.str().empty()) content += _sig_logs.str();
 	StdFile::write_file_content(filename.c_str(), (void*)content.c_str(), content.size());
 }
 
@@ -353,11 +473,13 @@ void CtaMocker::log_signal(const char* stdCode, double target, double price, uin
 {
 	_sig_logs << stdCode << "," << target << "," << price << "," << gentime << "," << usertag << "\n";
 }
+
 void CtaMocker::log_trade(const char* stdCode, bool isLong, bool isOpen, uint64_t curTime, double price, double qty, const char* userTag, double fee, uint32_t barNo)
 {
 	_trade_logs << stdCode << "," << curTime << "," << (isLong ? "LONG" : "SHORT") << "," << (isOpen ? "OPEN" : "CLOSE") 
 		<< "," << price << "," << qty << "," << userTag << "," << fee << "," << barNo << "\n";
 }
+
 void CtaMocker::log_close(const char* stdCode, bool isLong, uint64_t openTime, double openpx, uint64_t closeTime, double closepx, double qty, double profit, double maxprofit, double maxloss, 
 	double totalprofit /* = 0 */, const char* enterTag /* = "" */, const char* exitTag /* = "" */, uint32_t openBarNo /* = 0 */, uint32_t closeBarNo /* = 0 */)
 {
@@ -371,7 +493,9 @@ bool CtaMocker::init_cta_factory(WTSVariant* cfg)
 {
 	if (cfg == NULL)
 		return false;
+
 	const char* module = cfg->getCString("module");		// 文件名
+
 	DllHandle hInst = DLLHelper::load_library(module);	// 加载dll文件
 	if (hInst == NULL)
 		return false;
@@ -383,7 +507,6 @@ bool CtaMocker::init_cta_factory(WTSVariant* cfg)
 		return false;
 	}
 
-	// 填充策略工厂结构体
 	_factory._module_inst = hInst;
 	_factory._module_path = module;
 	_factory._creator = creator;
@@ -406,36 +529,31 @@ bool CtaMocker::init_cta_factory(WTSVariant* cfg)
 	return true;
 }
 
-// 回调调度器的 on_init
+//回调调度器的 on_init
 void CtaMocker::handle_init()
 {
 	this->on_init();
 }
-
-// 回调调度器的on_bar
+// 回调调度器的 on_bar
 void CtaMocker::handle_bar_close(const char* stdCode, const char* period, uint32_t times, WTSBarStruct* newBar)
 {
 	this->on_bar(stdCode, period, times, newBar);
 }
-
 // 回调调度器的 on_schedule
 void CtaMocker::handle_schedule(uint32_t uDate, uint32_t uTime)
 {
 	this->on_schedule(uDate, uTime);
 }
-
 // 回调调度器的 on_session_begin
 void CtaMocker::handle_session_begin(uint32_t curTDate)
 {
 	this->on_session_begin(curTDate);
 }
-
 // 回调调度器的 on_session_end
 void CtaMocker::handle_session_end(uint32_t curTDate)
 {
 	this->on_session_end(curTDate);
 }
-
 // 回测结束回调
 void CtaMocker::handle_replay_done()
 {
@@ -443,35 +561,36 @@ void CtaMocker::handle_replay_done()
 
 	if(_emit_times > 0)
 	{
-		WTSLogger::log_dyn_raw("strategy", _name.c_str(), LL_INFO, fmt::format("Strategy has been scheduled for {} times,totally taking {} microsecs,average of {} microsecs",
-			_emit_times, _total_calc_time, _total_calc_time / _emit_times).c_str());
+		WTSLogger::log_dyn_f("strategy", _name.c_str(), LL_INFO, 
+			"Strategy has been scheduled for {} times,totally taking {} microsecs,average of {} microsecs",
+			_emit_times, _total_calc_time, _total_calc_time / _emit_times);
 	}
 	else
 	{
-		WTSLogger::log_dyn_raw("strategy", _name.c_str(), LL_INFO, fmt::format("Strategy has been scheduled for {} times", _emit_times).c_str());
+		WTSLogger::log_dyn_f("strategy", _name.c_str(), LL_INFO, 
+			"Strategy has been scheduled for {} times", _emit_times);
 	}
 
 	dump_outputs();
 
 	if (_has_hook && _hook_valid)
 	{
-		WTSLogger::log_dyn("strategy", _name.c_str(), LL_DEBUG, "Replay done, notify control thread");
+		WTSLogger::log_dyn_raw("strategy", _name.c_str(), LL_DEBUG, "Replay done, notify control thread");
 		while(_wait_calc)
 			_cond_calc.notify_all();
-		WTSLogger::log_dyn("strategy", _name.c_str(), LL_DEBUG, "Notify control thread the end done");
+		WTSLogger::log_dyn_raw("strategy", _name.c_str(), LL_DEBUG, "Notify control thread the end done");
 	}
 
 	WTSLogger::log_dyn("strategy", _name.c_str(), LL_DEBUG, "Notify strategy the end of backtest");
-	
 	// 逻辑未实现
 	this->on_bactest_end();
 }
-
 // 回调调度器的 on_tick
 void CtaMocker::handle_tick(const char* stdCode, WTSTickData* curTick)
 {
 	this->on_tick(stdCode, curTick, true);
 }
+
 
 // 回调策略的 on_bar
 void CtaMocker::on_bar(const char* stdCode, const char* period, uint32_t times, WTSBarStruct* newBar)
@@ -491,7 +610,6 @@ void CtaMocker::on_bar(const char* stdCode, const char* period, uint32_t times, 
 
 	on_bar_close(stdCode, realPeriod.c_str(), newBar);
 }
-
 // 回调策略的 on_init
 void CtaMocker::on_init()
 {
@@ -501,7 +619,6 @@ void CtaMocker::on_init()
 
 	WTSLogger::info("CTA Strategy initialized, with slippage: %d", _slippage);
 }
-
 // 计算资金信息
 void CtaMocker::update_dyn_profit(const char* stdCode, double price)
 {
@@ -528,18 +645,20 @@ void CtaMocker::update_dyn_profit(const char* stdCode, double price)
 
 				dynprofit += dInfo._profit;
 			}
+
 			pInfo._dynprofit = dynprofit;
 		}
 	}
+
 	double total_dynprofit = 0;
 	for (auto& v : _pos_map)
 	{
 		const PosInfo& pInfo = v.second;
 		total_dynprofit += pInfo._dynprofit;
 	}
+
 	_fund_info._total_dynprofit = total_dynprofit;
 }
-
 // 调度器回调的 on_tick
 void CtaMocker::on_tick(const char* stdCode, WTSTickData* newTick, bool bEmitStrategy /* = true */)
 {
@@ -547,7 +666,7 @@ void CtaMocker::on_tick(const char* stdCode, WTSTickData* newTick, bool bEmitStr
 	double cur_px = newTick->price();
 	_price_map[stdCode] = cur_px;
 
-	// 先检查是否要信号要触发
+	//先检查是否要信号要触发
 	{
 		auto it = _sig_map.find(stdCode);
 		if (it != _sig_map.end())
@@ -565,10 +684,9 @@ void CtaMocker::on_tick(const char* stdCode, WTSTickData* newTick, bool bEmitStr
 
 		}
 	}
-
 	update_dyn_profit(stdCode, newTick->price());
 
-	// 检查条件单
+	//检查条件单
 	if (!_condtions.empty())
 	{
 		auto it = _condtions.find(stdCode);
@@ -620,7 +738,7 @@ void CtaMocker::on_tick(const char* stdCode, WTSTickData* newTick, bool bEmitStr
 			}
 			else
 			{
-				// 如果tick数据是模拟的，则要处理一下
+				//如果tick数据是模拟的，则要处理一下
 				switch (entrust._alg)
 				{
 				case WCT_Equal:
@@ -653,8 +771,9 @@ void CtaMocker::on_tick(const char* stdCode, WTSTickData* newTick, bool bEmitStr
 			{
 				double price = curPrice;
 				double curQty = stra_get_position(stdCode);
-				//_replayer->is_tick_enabled() ? newTick->price() : entrust._target;	//如果开启了tick回测,则用tick数据的价格,如果没有开启,则只能用条件单价格
-				WTSLogger::log_dyn_raw("strategy", _name.c_str(), LL_INFO, fmt::format("Condition order triggered[newprice: {}{}{}], instrument: {}, {} {}", cur_px, CMP_ALG_NAMES[entrust._alg], entrust._target, stdCode, ACTION_NAMES[entrust._action], entrust._qty).c_str());
+				WTSLogger::log_dyn_f("strategy", _name.c_str(), LL_INFO, 
+					"Condition order triggered[newprice: {}{}{}], instrument: {}, {} {}", 
+					cur_px, CMP_ALG_NAMES[entrust._alg], entrust._target, stdCode, ACTION_NAMES[entrust._action], entrust._qty);
 				switch (entrust._action)
 				{
 				case COND_ACTION_OL:
@@ -703,7 +822,6 @@ void CtaMocker::on_tick(const char* stdCode, WTSTickData* newTick, bool bEmitStr
 	if (bEmitStrategy)
 		on_tick_updated(stdCode, newTick);
 }
-
 // 回调策略的 on_bar
 void CtaMocker::on_bar_close(const char* code, const char* period, WTSBarStruct* newBar)
 {
@@ -722,7 +840,6 @@ void CtaMocker::on_calculate(uint32_t curDate, uint32_t curTime)
 	if (_strategy)
 		_strategy->on_schedule(this, curDate, curTime);
 }
-
 // 外挂逻辑?
 void CtaMocker::enable_hook(bool bEnabled /* = true */)
 {
@@ -730,12 +847,14 @@ void CtaMocker::enable_hook(bool bEnabled /* = true */)
 
 	WTSLogger::log_dyn("strategy", _name.c_str(), LL_DEBUG, "Calculating hook %s", bEnabled?"enabled":"disabled");
 }
+
 void CtaMocker::install_hook()
 {
 	_has_hook = true;
 
 	WTSLogger::log_dyn("strategy", _name.c_str(), LL_DEBUG, "CTA hook installed");
 }
+
 bool CtaMocker::step_calc()
 {
 	if (!_has_hook)
@@ -774,12 +893,13 @@ bool CtaMocker::step_calc()
 		return false;
 	}
 }
-
 // 回调策略的 on_schedule
 bool CtaMocker::on_schedule(uint32_t curDate, uint32_t curTime)
 {
-	_is_in_schedule = true;			// 开始调度,修改标记
+	_is_in_schedule = true;//开始调度,修改标记
+
 	_schedule_times++;
+
 	bool isMainUdt = false;
 	bool emmited = false;
 
@@ -804,11 +924,14 @@ bool CtaMocker::on_schedule(uint32_t curDate, uint32_t curTime)
 				break;
 			}
 		}
+
 		WTSSessionInfo* sInfo = _replayer->get_session_info(stdCode, true);
+
 		if (isMainUdt || _kline_tags.empty())
 		{
 			TimeUtils::Ticker ticker;
-			uint32_t offTime = sInfo->offsetTime(curTime);
+
+			uint32_t offTime = sInfo->offsetTime(curTime, true);
 			if (offTime <= sInfo->getCloseTime(true))
 			{
 				_condtions.clear();
@@ -835,6 +958,7 @@ bool CtaMocker::on_schedule(uint32_t curDate, uint32_t curTime)
 					WTSLogger::log_dyn("strategy", _name.c_str(), LL_DEBUG, "Calc resumed");
 					_cur_step = 3;
 				}
+
 				if(_has_hook)
 					on_calculate_done(curDate, curTime);
 				emmited = true;
@@ -856,20 +980,22 @@ bool CtaMocker::on_schedule(uint32_t curDate, uint32_t curTime)
 			break;
 		}
 	}
-	_is_in_schedule = false;	// 调度结束,修改标记
+
+	_is_in_schedule = false;//调度结束,修改标记
 	return emmited;
 }
 
-// 每个交易日开始，要把冻结持仓置零
+
 void CtaMocker::on_session_begin(uint32_t curTDate)
 {
+	//每个交易日开始，要把冻结持仓置零
 	for (auto& it : _pos_map)
 	{
 		const char* stdCode = it.first.c_str();
 		PosInfo& pInfo = (PosInfo&)it.second;
 		if (!decimal::eq(pInfo._frozen, 0))
 		{
-			stra_log_debug("%.0f of %s frozen released on %u", pInfo._frozen, stdCode, curTDate);
+			log_debug("%.0f of %s frozen released on %u", pInfo._frozen, stdCode, curTDate);
 			pInfo._frozen = 0;
 		}
 	}
@@ -885,12 +1011,14 @@ void CtaMocker::enum_position(FuncEnumCtaPosCallBack cb)
 		const PosInfo& pInfo = it.second;
 		desPos[stdCode] = pInfo._volume;
 	}
+
 	for (auto sit : _sig_map)
 	{
 		const char* stdCode = sit.first.c_str();
 		const SigInfo& sInfo = sit.second;
 		desPos[stdCode] = sInfo._volume;
 	}
+
 	for (auto v : desPos)
 	{
 		cb(v.first.c_str(), v.second);
@@ -900,7 +1028,7 @@ void CtaMocker::enum_position(FuncEnumCtaPosCallBack cb)
 // 计算资金信息并输出
 void CtaMocker::on_session_end(uint32_t curTDate)
 {
-	uint32_t curDate = curTDate;
+	uint32_t curDate = curTDate;//_replayer->get_trading_date();
 
 	double total_profit = 0;
 	double total_dynprofit = 0;
@@ -912,16 +1040,19 @@ void CtaMocker::on_session_end(uint32_t curTDate)
 		total_profit += pInfo._closeprofit;
 		total_dynprofit += pInfo._dynprofit;
 	}
-	_fund_logs << StrUtil::printf("%d,%.2f,%.2f,%.2f,%.2f\n", curDate,
+
+	_fund_logs << fmt::format("{},{},{},{},{}\n", curDate,
 		_fund_info._total_profit, _fund_info._total_dynprofit,
 		_fund_info._total_profit + _fund_info._total_dynprofit - _fund_info._total_fees, _fund_info._total_fees);
 
+	
 	if (_notifier)
 		_notifier->notifyFund("BT_FUND", curDate, _fund_info._total_profit, _fund_info._total_dynprofit,
 			_fund_info._total_profit + _fund_info._total_dynprofit - _fund_info._total_fees, _fund_info._total_fees);
+
+	//save_data();
 }
 
-// 
 CondList& CtaMocker::get_cond_entrusts(const char* stdCode)
 {
 	CondList& ce = _condtions[stdCode];
@@ -934,7 +1065,7 @@ void CtaMocker::stra_enter_long(const char* stdCode, double qty, const char* use
 	WTSCommodityInfo* commInfo = _replayer->get_commodity_info(stdCode);
 	if(commInfo == NULL)
 	{
-		stra_log_error("Cannot find corresponding commodity info of %s", stdCode);
+		log_error("Cannot find corresponding commodity info of %s", stdCode);
 		return;
 	}
 
@@ -973,20 +1104,19 @@ void CtaMocker::stra_enter_long(const char* stdCode, double qty, const char* use
 		condList.emplace_back(entrust);
 	}
 }
-
 // 开空
 void CtaMocker::stra_enter_short(const char* stdCode, double qty, const char* userTag /* = "" */, double limitprice, double stopprice)
 {
 	WTSCommodityInfo* commInfo = _replayer->get_commodity_info(stdCode);
 	if (commInfo == NULL)
 	{
-		stra_log_error("Cannot find corresponding commodity info of %s", stdCode);
+		log_error("Cannot find corresponding commodity info of %s", stdCode);
 		return;
 	}
 
 	if(!commInfo->canShort())
 	{
-		stra_log_error("Cannot short on %s", stdCode);
+		log_error("Cannot short on %s", stdCode);
 		return;
 	}
 
@@ -1003,9 +1133,11 @@ void CtaMocker::stra_enter_short(const char* stdCode, double qty, const char* us
 	else
 	{
 		CondList& condList = get_cond_entrusts(stdCode);
+
 		CondEntrust entrust;
 		strcpy(entrust._code, stdCode);
 		strcpy(entrust._usertag, userTag);
+
 		entrust._qty = qty;
 		entrust._field = WCF_NEWPRICE;
 		if (!decimal::eq(limitprice))
@@ -1018,18 +1150,19 @@ void CtaMocker::stra_enter_short(const char* stdCode, double qty, const char* us
 			entrust._target = stopprice;
 			entrust._alg = WCT_SmallerOrEqual;
 		}
+
 		entrust._action = COND_ACTION_OS;
+
 		condList.emplace_back(entrust);
 	}
 }
-
 // 平多
 void CtaMocker::stra_exit_long(const char* stdCode, double qty, const char* userTag /* = "" */, double limitprice, double stopprice)
 {
 	WTSCommodityInfo* commInfo = _replayer->get_commodity_info(stdCode);
 	if (commInfo == NULL)
 	{
-		stra_log_error("Cannot find corresponding commodity info of %s", stdCode);
+		log_error("Cannot find corresponding commodity info of %s", stdCode);
 		return;
 	}
 
@@ -1046,9 +1179,11 @@ void CtaMocker::stra_exit_long(const char* stdCode, double qty, const char* user
 	else
 	{
 		CondList& condList = get_cond_entrusts(stdCode);
+
 		CondEntrust entrust;
 		strcpy(entrust._code, stdCode);
 		strcpy(entrust._usertag, userTag);
+
 		entrust._qty = qty;
 		entrust._field = WCF_NEWPRICE;
 		if (!decimal::eq(limitprice))
@@ -1061,24 +1196,25 @@ void CtaMocker::stra_exit_long(const char* stdCode, double qty, const char* user
 			entrust._target = stopprice;
 			entrust._alg = WCT_SmallerOrEqual;
 		}
+
 		entrust._action = COND_ACTION_CL;
+
 		condList.emplace_back(entrust);
 	}
 }
-
 // 平空
 void CtaMocker::stra_exit_short(const char* stdCode, double qty, const char* userTag /* = "" */, double limitprice, double stopprice)
 {
 	WTSCommodityInfo* commInfo = _replayer->get_commodity_info(stdCode);
 	if (commInfo == NULL)
 	{
-		stra_log_error("Cannot find corresponding commodity info of %s", stdCode);
+		log_error("Cannot find corresponding commodity info of %s", stdCode);
 		return;
 	}
 
 	if (!commInfo->canShort())
 	{
-		stra_log_error("Cannot short on %s", stdCode);
+		log_error("Cannot short on %s", stdCode);
 		return;
 	}
 
@@ -1117,55 +1253,59 @@ void CtaMocker::stra_exit_short(const char* stdCode, double qty, const char* use
 		condList.emplace_back(entrust);
 	}
 }
-
 // 调用回放器获取当前价格
 double CtaMocker::stra_get_price(const char* stdCode)
 {
 	if (_replayer)
 		return _replayer->get_cur_price(stdCode);
+
 	return 0.0;
 }
-
 // 设置目标仓位
 void CtaMocker::stra_set_position(const char* stdCode, double qty, const char* userTag /* = "" */, double limitprice /* = 0.0 */, double stopprice /* = 0.0 */)
 {
 	WTSCommodityInfo* commInfo = _replayer->get_commodity_info(stdCode);
 	if (commInfo == NULL)
 	{
-		stra_log_error("Cannot find corresponding commodity info of %s", stdCode);
+		log_error("Cannot find corresponding commodity info of %s", stdCode);
 		return;
 	}
 
-	// 如果不能做空，则目标仓位不能设置负数
+	//如果不能做空，则目标仓位不能设置负数
 	if (!commInfo->canShort() && decimal::lt(qty, 0))
 	{
-		stra_log_error("Cannot short on %s", stdCode);
+		log_error("Cannot short on %s", stdCode);
 		return;
 	}
+
 	double total = stra_get_position(stdCode, false);
-	// 如果目标仓位和当前仓位是一致的，直接退出
+	//如果目标仓位和当前仓位是一致的，直接退出
 	if (decimal::eq(total, qty))
 		return;
+
 	if(commInfo->isT1())
 	{
 		double valid = stra_get_position(stdCode, true);
 		double frozen = total - valid;
-		// 如果是T+1规则，则目标仓位不能小于冻结仓位
+		//如果是T+1规则，则目标仓位不能小于冻结仓位
 		if(decimal::lt(qty, frozen))
 		{
-			stra_log_error(fmt::format("New position of {} cannot be set to {} due to {} being frozen", stdCode, qty, frozen).c_str());
+			WTSLogger::log_dyn_f("strategy", _name.c_str(), LL_ERROR, "New position of {} cannot be set to {} due to {} being frozen", stdCode, qty, frozen);
 			return;
 		}
 	}
+
 	_replayer->sub_tick(_context_id, stdCode);
-	if (decimal::eq(limitprice, 0.0) && decimal::eq(stopprice, 0.0))	// 没有设置触发条件，则直接添加信号
+	if (decimal::eq(limitprice, 0.0) && decimal::eq(stopprice, 0.0))	//没有设置触发条件，则直接添加信号
 	{
 		append_signal(stdCode, qty, userTag);
 	}
 	else
 	{
 		CondList& condList = get_cond_entrusts(stdCode);
+
 		bool isBuy = decimal::gt(qty, total);
+
 		CondEntrust entrust;
 		strcpy(entrust._code, stdCode);
 		strcpy(entrust._usertag, userTag);
@@ -1181,7 +1321,9 @@ void CtaMocker::stra_set_position(const char* stdCode, double qty, const char* u
 			entrust._target = stopprice;
 			entrust._alg = isBuy ? WCT_LargerOrEqual : WCT_SmallerOrEqual;
 		}
+
 		entrust._action = COND_ACTION_SP;
+
 		condList.emplace_back(entrust);
 	}
 }
@@ -1200,6 +1342,8 @@ void CtaMocker::append_signal(const char* stdCode, double qty, const char* userT
 	sInfo._triggered = !_is_in_schedule;
 
 	log_signal(stdCode, qty, curPx, sInfo._gentime, userTag);
+
+	//save_data();
 }
 
 // 调整持仓到目标持仓
@@ -1212,7 +1356,7 @@ void CtaMocker::do_set_position(const char* stdCode, double qty, double price /*
 	uint64_t curTm = (uint64_t)_replayer->get_date() * 10000 + _replayer->get_min_time();
 	uint32_t curTDate = _replayer->get_trading_date();
 
-	// 手数相等则不用操作了
+	//手数相等则不用操作了
 	if (decimal::eq(pInfo._volume, qty))
 		return;
 
@@ -1220,26 +1364,28 @@ void CtaMocker::do_set_position(const char* stdCode, double qty, double price /*
 	if (commInfo == NULL)
 		return;
 
-	// 成交价
+	//成交价
 	double trdPx = curPx;
 
 	double diff = qty - pInfo._volume;
 	bool isBuy = decimal::gt(diff, 0.0);
-	if (decimal::gt(pInfo._volume*diff, 0))			// 当前持仓和仓位变化方向一致, 增加一条明细, 增加数量即可
+	if (decimal::gt(pInfo._volume*diff, 0))//当前持仓和仓位变化方向一致, 增加一条明细, 增加数量即可
 	{
 		pInfo._volume = qty;
 
-		// 如果T+1，则冻结仓位要增加
+		//如果T+1，则冻结仓位要增加
 		if (commInfo->isT1())
 		{
+			//ASSERT(diff>0);
 			pInfo._frozen += diff;
-			stra_log_debug("%s frozen position up to %.0f", stdCode, pInfo._frozen);
+			log_debug("%s frozen position up to %.0f", stdCode, pInfo._frozen);
 		}
 		
 		if (_slippage != 0)
 		{
 			trdPx += _slippage * commInfo->getPriceTick()*(isBuy ? 1 : -1);
 		}
+
 		DetailInfo dInfo;
 		dInfo._long = decimal::gt(qty, 0);
 		dInfo._price = trdPx;
@@ -1250,6 +1396,7 @@ void CtaMocker::do_set_position(const char* stdCode, double qty, double price /*
 		dInfo._open_barno = _schedule_times;
 		pInfo._details.emplace_back(dInfo);
 		pInfo._last_entertime = curTm;
+
 		double fee = _replayer->calc_fee(stdCode, trdPx, abs(diff), 0);
 		_fund_info._total_fees += fee;
 
@@ -1272,10 +1419,13 @@ void CtaMocker::do_set_position(const char* stdCode, double qty, double price /*
 			double maxQty = min(dInfo._volume, left);
 			if (decimal::eq(maxQty, 0))
 				continue;
+
 			double maxProf = dInfo._max_profit * maxQty / dInfo._volume;
 			double maxLoss = dInfo._max_loss * maxQty / dInfo._volume;
+
 			dInfo._volume -= maxQty;
 			left -= maxQty;
+
 			if (decimal::eq(dInfo._volume, 0))
 				count++;
 
@@ -1295,28 +1445,31 @@ void CtaMocker::do_set_position(const char* stdCode, double qty, double price /*
 			//这里写平仓记录
 			log_close(stdCode, dInfo._long, dInfo._opentime, dInfo._price, curTm, trdPx, maxQty, profit, maxProf, maxLoss, 
 				_total_closeprofit - _fund_info._total_fees, dInfo._opentag, userTag, dInfo._open_barno, _schedule_times);
+
 			if (left == 0)
 				break;
 		}
 
-		// 需要清理掉已经平仓完的明细
+		//需要清理掉已经平仓完的明细
 		while (count > 0)
 		{
 			auto it = pInfo._details.begin();
 			pInfo._details.erase(it);
 			count--;
 		}
-		// 最后,如果还有剩余的,则需要反手了
+
+		//最后,如果还有剩余的,则需要反手了
 		if (left > 0)
 		{
 			left = left * qty / abs(qty);
 
-			// 如果T+1，则冻结仓位要增加
+			//如果T+1，则冻结仓位要增加
 			if (commInfo->isT1())
 			{
 				pInfo._frozen += left;
-				stra_log_debug("%s frozen position up to %.0f", stdCode, pInfo._frozen);
+				log_debug("%s frozen position up to %.0f", stdCode, pInfo._frozen);
 			}
+
 			DetailInfo dInfo;
 			dInfo._long = decimal::gt(qty, 0);
 			dInfo._price = trdPx;
@@ -1326,7 +1479,8 @@ void CtaMocker::do_set_position(const char* stdCode, double qty, double price /*
 			dInfo._open_barno = _schedule_times;
 			strcpy(dInfo._opentag, userTag);
 			pInfo._details.emplace_back(dInfo);
-			// 这里还需要写一笔成交记录
+ 
+			//这里还需要写一笔成交记录
 			double fee = _replayer->calc_fee(stdCode, trdPx, abs(left), 0);
 			_fund_info._total_fees += fee;
 			log_trade(stdCode, dInfo._long, true, curTm, trdPx, abs(left), userTag, fee, _schedule_times);
@@ -1340,12 +1494,12 @@ void CtaMocker::do_set_position(const char* stdCode, double qty, double price /*
 WTSKlineSlice* CtaMocker::stra_get_bars(const char* stdCode, const char* period, uint32_t count, bool isMain /* = false */)
 {
 	std::string key = StrUtil::printf("%s#%s", stdCode, period);	// config.json文件中的"code":"CFFEX.IF.HOT", "period": "m5"
-	std::string basePeriod = "";					// 记录 m, 即分钟级别回测
+	std::string basePeriod = "";				// 记录 m, 即分钟级别回测
 	uint32_t times = 1;
 	if (strlen(period) > 1)
 	{
 		basePeriod.append(period, 1);
-		times = strtoul(period + 1, NULL, 10);		// 提取 5, 即5分钟
+		times = strtoul(period + 1, NULL, 10);	// 提取 5, 即5分钟
 	}
 	else
 	{
@@ -1371,12 +1525,12 @@ WTSKlineSlice* CtaMocker::stra_get_bars(const char* stdCode, const char* period,
 	{
 		// 提取标准合约代码
 		CodeHelper::CodeInfo cInfo = CodeHelper::extractStdCode(stdCode);
-
+		WTSCommodityInfo* commInfo = _replayer->get_commodity_info(stdCode);
+		
 		// 如果是股票 ...
 		std::string realCode = stdCode;
-		if(cInfo._category == CC_Stock && cInfo.isExright())
+		if(commInfo->isStock() && cInfo.isExright())
 			realCode = StrUtil::printf("%s.%s.%s", cInfo._exchg, cInfo._product, cInfo._code);
-		
 		// 订阅tick数据
 		_replayer->sub_tick(id(), realCode.c_str());
 	}
@@ -1388,26 +1542,32 @@ WTSTickSlice* CtaMocker::stra_get_ticks(const char* stdCode, uint32_t count)
 {
 	return _replayer->get_tick_slice(stdCode, count);
 }
+
 WTSTickData* CtaMocker::stra_get_last_tick(const char* stdCode)
 {
 	return _replayer->get_last_tick(stdCode);
 }
+
 void CtaMocker::stra_sub_ticks(const char* code)
 {
 	_replayer->sub_tick(_context_id, code);
 }
+
 WTSCommodityInfo* CtaMocker::stra_get_comminfo(const char* stdCode)
 {
 	return _replayer->get_commodity_info(stdCode);
 }
+
 uint32_t CtaMocker::stra_get_tdate()
 {
 	return _replayer->get_trading_date();
 }
+
 uint32_t CtaMocker::stra_get_date()
 {
 	return _replayer->get_date();
 }
+
 uint32_t CtaMocker::stra_get_time()
 {
 	return _replayer->get_min_time();
@@ -1430,28 +1590,21 @@ double CtaMocker::stra_get_fund_data(int flag)
 		return 0.0;
 	}
 }
-	
+
 // 输出不同级别日志
-void CtaMocker::stra_log_info(const char* fmt, ...)
+void CtaMocker::stra_log_info(const char* message)
 {
-	va_list args;
-	va_start(args, fmt);
-	WTSLogger::vlog_dyn("strategy", _name.c_str(), LL_INFO, fmt, args);
-	va_end(args);
+	WTSLogger::log_dyn_raw("strategy", _name.c_str(), LL_INFO, message);
 }
-void CtaMocker::stra_log_debug(const char* fmt, ...)
+
+void CtaMocker::stra_log_debug(const char* message)
 {
-	va_list args;
-	va_start(args, fmt);
-	WTSLogger::vlog_dyn("strategy", _name.c_str(), LL_DEBUG, fmt, args);
-	va_end(args);
+	WTSLogger::log_dyn_raw("strategy", _name.c_str(), LL_DEBUG, message);
 }
-void CtaMocker::stra_log_error(const char* fmt, ...)
+
+void CtaMocker::stra_log_error(const char* message)
 {
-	va_list args;
-	va_start(args, fmt);
-	WTSLogger::vlog_dyn("strategy", _name.c_str(), LL_ERROR, fmt, args);
-	va_end(args);
+	WTSLogger::log_dyn_raw("strategy", _name.c_str(), LL_ERROR, message);
 }
 
 // 加载用户数据
@@ -1463,6 +1616,7 @@ const char* CtaMocker::stra_load_user_data(const char* key, const char* defVal /
 
 	return defVal;
 }
+
 // 更新用户数据
 void CtaMocker::stra_save_user_data(const char* key, const char* val)
 {
@@ -1549,8 +1703,10 @@ double CtaMocker::stra_get_position(const char* stdCode, bool bOnlyValid /* = fa
 		const DetailInfo& dInfo = (*it);
 		if (strcmp(dInfo._opentag, userTag) != 0)
 			continue;
+
 		return dInfo._volume;
 	}
+
 	return 0;
 }
 
@@ -1571,6 +1727,7 @@ double CtaMocker::stra_get_position_avgpx(const char* stdCode)
 		const DetailInfo& dInfo = *dit;
 		amount += dInfo._price*dInfo._volume;
 	}
+
 	return amount / pInfo._volume;
 }
 
@@ -1580,6 +1737,7 @@ double CtaMocker::stra_get_position_profit(const char* stdCode)
 	auto it = _pos_map.find(stdCode);
 	if (it == _pos_map.end())
 		return 0;
+
 	const PosInfo& pInfo = it->second;
 	return pInfo._dynprofit;
 }
@@ -1637,6 +1795,7 @@ double CtaMocker::stra_get_detail_profit(const char* stdCode, const char* userTa
 		const DetailInfo& dInfo = (*it);
 		if (strcmp(dInfo._opentag, userTag) != 0)
 			continue;
+
 		if (flag == 0)
 			return dInfo._profit;
 		else if (flag > 0)
@@ -1644,6 +1803,7 @@ double CtaMocker::stra_get_detail_profit(const char* stdCode, const char* userTa
 		else
 			return dInfo._max_loss;
 	}
+
 	return 0.0;
 }
 ```

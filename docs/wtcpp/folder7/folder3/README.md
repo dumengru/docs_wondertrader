@@ -1,3 +1,3 @@
-# CTP
+# CTPLoader
 
 source: `{{ page.path }}`

@@ -1,3 +1,3 @@
-# CTP
+# TraderCTP
 
 source: `{{ page.path }}`

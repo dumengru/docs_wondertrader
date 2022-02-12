@@ -1,4 +1,4 @@
-# WTSTools
+# WTSUtils
 
 source: `{{ page.path }}`
 

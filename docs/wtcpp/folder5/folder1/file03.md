@@ -1,19 +1,36 @@
-# 消息通知
+# EventNotifier.h
 
 source: `{{ page.path }}`
 
-## EventNotifier.h
-
-### EventNotifier
-
 ```cpp
-// 为输出 WtMsgQue.dll 中的函数准备
+/*!
+ * \file EventCaster.h
+ * \project	WonderTrader
+ *
+ * \author Wesley
+ * \date 2020/03/30
+ * 
+ * \brief UDP广播对象定义
+ */
+#pragma once
+
+#include <queue>
+
+#include "../Includes/WTSMarcos.h"
+#include "../Includes/WTSObject.hpp"
+#include "../Share/StdUtils.hpp"
+
+ // 为输出 WtMsgQue.dll 中的函数准备
 typedef unsigned long(*FuncCreateMQServer)(const char*, bool);
 typedef void(*FuncDestroyMQServer)(unsigned long);
 typedef void(*FundPublishMessage)(unsigned long, const char*, const char*, unsigned long);
 
 typedef void(*FuncLogCallback)(unsigned long, const char*, bool);
 typedef void(*FuncRegCallbacks)(FuncLogCallback);
+
+
+NS_WTP_BEGIN
+class WTSVariant;
 
 class EventNotifier
 {
@@ -31,23 +48,53 @@ public:
 private:
 	std::string		m_strURL;
 	uint32_t		_mq_sid;
-	FuncCreateMQServer	_creator;       // MQ函数: 注册
-	FuncDestroyMQServer	_remover;       // MQ函数: 删除
-	FundPublishMessage	_publisher;     // MQ函数: 通知
-	FuncRegCallbacks	_register;      // MQ函数: 注册
+	FuncCreateMQServer	_creator;		// MQ函数: 创建
+	FuncDestroyMQServer	_remover;		// MQ函数: 删除
+	FundPublishMessage	_publisher;		// MQ函数: 通知
+	FuncRegCallbacks	_register;		// MQ函数: 注册
 };
+
+NS_WTP_END
 ```
 
 ## EventNotifier.cpp
 
 ```cpp
-// 回调函数
+/*!
+ * \file EventCaster.cpp
+ * \project	WonderTrader
+ *
+ * \author Wesley
+ * \date 2020/03/30
+ * 
+ * \brief 
+ */
+#include "EventNotifier.h"
+#include "WtHelper.h"
+
+#include "../Share/TimeUtils.hpp"
+#include "../Share/DLLHelper.hpp"
+
+#include "../Includes/WTSVariant.hpp"
+#include "../WTSTools/WTSLogger.h"
+
+#include <rapidjson/document.h>
+#include <rapidjson/prettywriter.h>
+namespace rj = rapidjson;
+
+USING_NS_WTP;
+
 void on_mq_log(unsigned long id, const char* message, bool bServer)
-{}
+{
+
+}
 
 EventNotifier::EventNotifier()
 	: _mq_sid(0)
-{}
+{
+	
+}
+
 
 EventNotifier::~EventNotifier()
 {
@@ -69,15 +116,14 @@ bool EventNotifier::init(WTSVariant* cfg)
 	if (!StdFile::exists(dllpath.c_str()))
 		dllpath = WtHelper::getInstDir() + module;
 
-    // 加载 WtMsgQue.dll 文件
+	// 加载 WtMsgQue.dll 文件
 	DllHandle dllInst = DLLHelper::load_library(dllpath.c_str());
 	if (dllInst == NULL)
 	{
 		WTSLogger::error("MQ module %s loading failed", dllpath.c_str());
 		return false;
 	}
-
-    // 获取 dll 中的函数对象
+	// 获取 dll 中的函数对象
 	_creator = (FuncCreateMQServer)DLLHelper::get_symbol(dllInst, "create_server");
 	if (_creator == NULL)
 	{
@@ -115,6 +161,7 @@ void EventNotifier::notifyData(const char* topic, void* data , uint32_t dataLen)
 		_publisher(_mq_sid, topic, (const char*)data, dataLen);
 }
 
+// 通知资金数据
 void EventNotifier::notifyFund(const char* topic, uint32_t uDate, double total_profit, double dynprofit, double dynbalance, double total_fee)
 {
 	std::string output;
@@ -138,4 +185,5 @@ void EventNotifier::notifyFund(const char* topic, uint32_t uDate, double total_p
 	if (_publisher)
 		_publisher(_mq_sid, topic, (const char*)output.c_str(), output.size());
 }
+
 ```
