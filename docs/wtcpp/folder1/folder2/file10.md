@@ -1,45 +1,54 @@
-# 风控数据
+# WTSRiskDef.hpp
 
 source: `{{ page.path }}`
 
-## WTSRiskDef.hpp
+```cpp
+/*!
+ * \file WTSRiskDef.hpp
+ * \project	WonderTrader
+ *
+ * \author Wesley
+ * \date 2020/03/30
+ * 
+ * \brief WT风控相关数据定义
+ */
+#pragma once
+#include "WTSObject.hpp"
 
+/*
 1. 创建相关信息结构体
 2. 将结构体包装成类, 通过类方法获取结构体信息
+*/
 
-### WTSTradeStateInfo
-
-交易信息统计
-
-```cpp
+NS_WTP_BEGIN
 typedef struct _TradeStatInfo
 {
 	char		_code[MAX_INSTRUMENT_LENGTH];
-	// 开平统计
-	double	l_openvol;	    // 当日开多仓量
-	double	l_closevol;	    // 当日平多仓量
-	double	l_closetvol;    // 当日平今多仓量
-	double	s_openvol;	    // 当日开空仓量
-	double	s_closevol;	    // 当日平空仓量
-	double	s_closetvol;    // 当日平今空仓量
+	//开平统计
+	double	l_openvol;	//当日开多仓量
+	double	l_closevol;	//当日平多仓量
+	double	l_closetvol;//当日平今多仓量
+	double	s_openvol;	//当日开空仓量
+	double	s_closevol;	//当日平空仓量
+	double	s_closetvol;//当日平今空仓量
 
-	// 挂单统计
-	uint32_t	b_orders;	// 委买笔数
-	double		b_ordqty;	// 委买数量
-	uint32_t	s_orders;	// 委卖笔数
-	double		s_ordqty;	// 委卖数量
+	//挂单统计
+	uint32_t	b_orders;	//委买笔数
+	double		b_ordqty;	//委买数量
+	uint32_t	s_orders;	//委卖笔数
+	double		s_ordqty;	//委卖数量
 
-	// 撤单统计
-	uint32_t	b_cancels;	// 撤买笔数
-	double		b_canclqty;	// 撤买数量
-	uint32_t	s_cancels;	// 撤卖笔数
-	double		s_canclqty;	// 撤卖数量
+	//撤单统计
+	uint32_t	b_cancels;	//撤买笔数
+	double		b_canclqty;	//撤买数量
+	uint32_t	s_cancels;	//撤卖笔数
+	double		s_canclqty;	//撤卖数量
 
-	// 错单统计
-	uint32_t	b_wrongs;	// 错单笔数
-	double		b_wrongqty;	// 错单数量
-	uint32_t	s_wrongs;	// 错单笔数
-	double		s_wrongqty;	// 错单数量
+	//错单统计
+	uint32_t	b_wrongs;	//错单笔数
+	double		b_wrongqty;	//错单数量
+	uint32_t	s_wrongs;	//错单笔数
+	double		s_wrongqty;	//错单数量
 
 	_TradeStatInfo()
 	{
@@ -57,6 +66,7 @@ public:
 	{
 		WTSTradeStateInfo* pRet = new WTSTradeStateInfo();
 		strcpy(pRet->_trd_stat_info._code, code);
+
 		return pRet;
 	}
 
@@ -88,13 +98,7 @@ public:
 private:
 	TradeStatInfo	_trd_stat_info;
 };
-```
 
-### WTSPortFundInfo
-
-资金信息统计
-
-```cpp
 //组合资金数据
 typedef struct _WTSFundStruct
 {
@@ -173,6 +177,8 @@ public:
 private:
 	WTSFundStruct	_fund_info;
 };
+
+NS_WTP_END
 ```
 
 

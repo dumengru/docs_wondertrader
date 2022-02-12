@@ -1,13 +1,38 @@
-# 基础宏定义
+# WTSMarcos.h
 
 source: `{{ page.path }}`
 
-## WTSMarcos.h
-
 ```cpp
-// 合约/交易所代码最大长度
+/*!
+ * \file WTSMarcos.h
+ * \project	WonderTrader
+ *
+ * \author Wesley
+ * \date 2020/03/30
+ * 
+ * \brief WonderTrader基础宏定义文件
+ */
+#pragma once
+#include <limits.h>
+
+/*
+标准库在<algorithm>头中定义了两个模板函数std::min() 和 std::max()。
+
+可惜在 Visual C++ 无法使用它们，因为没有定义这些函数模板。
+原因是名字min和max与<windows.h>中传统的min/max宏定义有冲突。
+
+为了解决这个问题，Visual C++ 定义了另外两个功能相同的模板：_cpp_min() 和 _cpp_max()。
+我们可以用它们来代替std::min() 和 std::max()。
+
+为了禁用Visual C++中的 min/max宏定义，可以在包含<windows.h>头文件之前加上：NOMINMAX
+*/
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
+ // 合约/交易所代码最大长度
 #define MAX_INSTRUMENT_LENGTH	32
-#define MAX_EXCHANGE_LENGTH		10
+#define MAX_EXCHANGE_LENGTH		16
 
 // 数据类型转换
 #define STATIC_CONVERT(x,T)		static_cast<T>(x)
@@ -47,9 +72,9 @@ source: `{{ page.path }}`
 #endif
 
 // 全局命名空间
-#define NS_OTP_BEGIN	namespace otp{
-#define NS_OTP_END	}//namespace opt
-#define	USING_NS_OTP	using namespace otp
+#define NS_WTP_BEGIN	namespace wtp{
+#define NS_WTP_END	}//namespace wpt
+#define	USING_NS_WTP	using namespace wtp
 
 // 函数导出
 #ifndef EXPORT_FLAG

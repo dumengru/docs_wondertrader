@@ -1,10 +1,23 @@
-# 基础Object
+# WTSObject.hpp
 
 source: `{{ page.path }}`
 
-## WTSObject.hpp
-
 ```cpp
+/*!
+ * \file WTSObject.hpp
+ * \project	WonderTrader
+ *
+ * \author Wesley
+ * \date 2020/03/30
+ * 
+ * \brief Wt基础Object定义
+ */
+#pragma once
+#include <stdint.h>
+#include <atomic>
+#include "WTSMarcos.h"
+
+NS_WTP_BEGIN
 class WTSObject
 {
 public:
@@ -40,4 +53,7 @@ public:
 protected:
 	volatile std::atomic<uint32_t>	m_uRefs;
 };
+
+NS_WTP_END
+
 ```

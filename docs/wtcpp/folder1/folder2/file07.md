@@ -1,12 +1,21 @@
-# 主力切换
+# WTSHotltem.hpp
 
 source: `{{ page.path }}`
 
-## WTSHotltem.hpp
-
-主力合约代码+"0001"
-
 ```cpp
+/*!
+ * \file WTSHotItem.hpp
+ * \project	WonderTrader
+ *
+ * \author Wesley
+ * \date 2020/03/30
+ * 
+ * \brief Wt主力切换规则对象定义文件
+ */
+#pragma once
+#include "WTSObject.hpp"
+
+NS_WTP_BEGIN
 class WTSHotItem : public WTSObject
 {
 protected:
@@ -36,13 +45,14 @@ public:
 	uint32_t		switchdate() const{return _dt;}
 
 private:
-	std::string		_exchg;     // 交易所
-	std::string		_product;   // 品种
-	std::string		_hot;       // 品种 + "0001"
-	std::string		_from;      // 旧合约
-	std::string		_to;        // 新合约
-	uint32_t		_dt;        // 切换日期
-	double		_oldclose;      // 旧收盘价
-	double		_newclose;      // 新收盘价
+	std::string		_exchg;		// 交易所
+	std::string		_product;	// 品种
+	std::string		_hot;		// 品种 + "0001"
+	std::string		_from;		// 旧合约
+	std::string		_to;		// 新合约
+	uint32_t		_dt;		// 切换日期
+	double		_oldclose;		// 旧收盘价
+	double		_newclose;		// 新收盘价
 };
+NS_WTP_END
 ```

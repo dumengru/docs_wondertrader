@@ -2,6 +2,6 @@
 
 source: `{{ page.path }}`
 
-```tip
+```note
 Includes 文件夹
 ```

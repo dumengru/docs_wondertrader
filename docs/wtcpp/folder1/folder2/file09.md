@@ -1,12 +1,22 @@
-# 指标数据
+# WTSExpressData.hpp
 
 source: `{{ page.path }}`
 
-## WTSExpressData.hpp
-
-### 自定义类型
-
 ```cpp
+/*!
+ * \file WTSExpressData.hpp
+ * \project	WonderTrader
+ *
+ * \author Wesley
+ * \date 2020/03/30
+ * 
+ * \brief Wt指标数据定义文件
+ */
+#pragma once
+#include <stdint.h>
+#include "WTSDataDef.hpp"
+#include "WTSMarcos.h"
+
 #ifdef _MSC_VER
 #include <WTypes.h>
 #else
@@ -16,13 +26,11 @@ typedef unsigned short	WORD;
 typedef unsigned long	DWORD;
 #define RGB(r,g,b)	((COLORREF)(((BYTE)(r)|((WORD)((BYTE)(g))<<8))|(((DWORD)(BYTE)(b))<<16)))
 #endif
-```
 
-### WTSLineInfo
+NS_WTP_BEGIN
 
-指标线类型
-
-```cpp
+//////////////////////////////////////////////////////////////////////////
+//线型类,指标用到
 class WTSLineInfo : public WTSObject
 {
 public:
@@ -46,34 +54,29 @@ protected:
 	,_line_style(0){}
 
 protected:
-	COLORREF	_line_color;    // 指标线颜色
-	int			_line_width;    // 指标线宽度
-	int			_line_style;    // 指标线风格
+	COLORREF	_line_color;		// 指标线颜色
+	int			_line_width;		// 指标线宽度
+	int			_line_style;		// 指标线风格
 };
-```
 
-### WTSExpressParams
 
-指标参数
-
-```cpp
+//////////////////////////////////////////////////////////////////////////
+//指标参数类
 class WTSExpressParams : public WTSObject
 {
 public:
-    // 创建对象
 	static	WTSExpressParams* create()
 	{
 		WTSExpressParams* pRet = new WTSExpressParams;
+
 		return pRet;
 	}
-
-    // 添加参数
+	// 添加参数
 	void	addParam(int param)
 	{
 		m_vecParams.emplace_back(param);
 	}
-
-    // 设置参数
+	// 设置参数
 	void	setParam(uint32_t idx, int param)
 	{
 		if(idx >= m_vecParams.size())
@@ -81,31 +84,25 @@ public:
 
 		m_vecParams[idx] = param;
 	}
-
-    // 根据索引获取指标参数
+	// 根据索引获取指标参数
 	int		getParam(uint32_t idx) const
 	{
 		if(idx >= m_vecParams.size())
 			return INVALID_INT32;
+
 		return m_vecParams[idx];
 	}
-
-    // 获取参数数量
+	// 获取参数数量
 	uint32_t	getParamCount() const{return m_vecParams.size();}
-
-    // 运算符重载[]
+	// 运算符重载[]
 	int&	operator[](uint32_t idx){return m_vecParams[idx];}
 
 protected:
-	vector<int>		m_vecParams;    // 指标参数列表
+	vector<int>		m_vecParams;	// 指标参数列表
 };
-```
 
-### WTSExpressLine
-
-指标线类
-
-```cpp
+//////////////////////////////////////////////////////////////////////////
+//指标线类
 class WTSExpressLine : public WTSValueArray
 {
 public:
@@ -116,10 +113,12 @@ public:
 		pRet->m_uStyle = uStyle;
 		pRet->m_lineType = lineType;
 		pRet->resize(size);
+
 		return pRet;
 	}
 
 	WTSExpressLine(): m_ayLineInfo(NULL){}
+
 	virtual void release()
 	{
 		if(isSingleRefs() && m_ayLineInfo)
@@ -180,7 +179,9 @@ public:
 
 	void		setLineTag(const char* tag){m_strLineTag = tag;}
 	const char*	getLineTag(){return m_strLineTag.c_str();}
+
 	bool		isStyle(uint32_t uStyle) const{ return (m_uStyle & uStyle) == uStyle; }
+
 	void		setLineType(WTSExpressLineType lineType){m_lineType = lineType;}
 	WTSExpressLineType getLineType() const{return m_lineType;}
 
@@ -193,13 +194,11 @@ protected:
 	std::string		m_strFormat;
 	WTSExpressLineType	m_lineType;
 };
-```
+typedef vector<WTSExpressLine*>	WTSVecExpLines;
 
-### WTSExpressData
 
-指标类
-
-```cpp
+//////////////////////////////////////////////////////////////////////////
+//指标类
 class WTSExpressData : public WTSObject
 {
 public:
@@ -347,7 +346,7 @@ public:
 		{
 			WTSExpressLine* line = STATIC_CONVERT(*it, WTSExpressLine*);
 			bool bAbs = (line->getLineType() == WELT_VolStick || line->getLineType() == WELT_AStickLine);
-			if(bAbs)		//原因是成交量柱,是以0开始绘制的
+			if(bAbs)//原因是成交量柱,是以0开始绘制的
 				return 0;
 			double v = line->minvalue(head, tail, bAbs);
 			if (v == INVALID_DOUBLE)
@@ -387,6 +386,8 @@ protected:
 	bool			m_bBaseLine;
 	double			m_dBaseLine;
 };
+
+NS_WTP_END
 ```
 
 
