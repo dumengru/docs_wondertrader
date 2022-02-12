@@ -1,29 +1,25 @@
-# 获取dll
+# ModuleHelper.hpp
 
 source: `{{ page.path }}`
 
-## ModuleHelper.hpp
-
-### DllMain
-
-获取dll句柄, 及文件地址
-
 ```cpp
+#pragma once
+#include "../Share/StrUtil.hpp"
+
 // 获取dll句柄
 #ifdef _MSC_VER
 #include <wtypes.h>
-static 	g_dllModule = NULL;
-
+static HMODULE	g_dllModule = NULL;
 // DllMain: DLL程序入口点函数
 BOOL APIENTRY DllMain(
-	HANDLE hModule,                 // dll本身实例句柄
-	DWORD  ul_reason_for_call,      // dll被调用原因
+	HANDLE hModule,					// dll本身实例句柄
+	DWORD  ul_reason_for_call,		// dll被调用原因
 	LPVOID lpReserved
 )
 {
 	switch (ul_reason_for_call)
 	{
-	case DLL_PROCESS_ATTACH:        // 被进程首次调用
+	case DLL_PROCESS_ATTACH:		// 被进程首次调用
 		g_dllModule = (HMODULE)hModule;
 		break;
 	}
@@ -66,5 +62,5 @@ static const char* getBinDir()
 	}
 
 	return g_bin_dir.c_str();
-}
+}  
 ```

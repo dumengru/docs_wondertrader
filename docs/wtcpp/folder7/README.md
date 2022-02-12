@@ -1,7 +1,7 @@
-# WTSTools
+# WtCTP
 
 source: `{{ page.path }}`
 
 ```note
-WTSTools 文件夹
+CTP实盘相关内容
 ```

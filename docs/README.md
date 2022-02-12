@@ -3,7 +3,7 @@
 ![wt01.jfif](./assets/images/wt/wt001.jfif)
 
 <p align="center">
-    <img src ="https://img.shields.io/badge/version-0.8.0-blueviolet.svg"/>
+    <img src ="https://img.shields.io/badge/version-0.9.0-blueviolet.svg"/>
     <img src ="https://img.shields.io/badge/platform-windows|linux-yellow.svg"/>
     <img src ="https://img.shields.io/badge/build-passing-brightgreen"/>
     <img src ="https://img.shields.io/badge/license-MIT-orange"/>

@@ -1,474 +1,537 @@
-# 字符串处理
+# TimeUtils.hpp
 
 source: `{{ page.path }}`
 
-## StrUtil.hpp
-
-### StrUtil
-
 ```cpp
-typedef std::vector<std::string> StringVector;
-
-class StrUtil
-{
-public:
-	// 删除开头/结尾空格
-	static inline void trim(std::string& str, const char* delims = " \t\r", bool left = true, bool right = true)
-	{
-		if(right)
-			str.erase(str.find_last_not_of(delims)+1);
-		if(left)
-			str.erase(0, str.find_first_not_of(delims));
-	}
-
-	static inline std::string trim(const char* str, const char* delims = " \t\r", bool left = true, bool right = true)
-	{
-		std::string ret = str;
-		if(right)
-			ret.erase(ret.find_last_not_of(delims)+1);
-		if(left)
-			ret.erase(0, ret.find_first_not_of(delims));
-
-		return std::move(ret);
-	}
-
-	//去掉所有空格
-	static inline void trimAllSpace(std::string &str)
-	{
-		std::string::iterator destEnd = std::remove_if(str.begin(), str.end(), [](const char& c){
-			return c == ' ';
-		});
-		str.resize(destEnd-str.begin());
-	}
-
-	//去除所有特定字符
-	static inline void trimAll(std::string &str,char ch)
-	{
-		std::string::iterator destEnd=std::remove_if(str.begin(),str.end(),std::bind1st(std::equal_to<char>(),ch));
-		str.resize(destEnd-str.begin());
-	}
-
-	// 字符串分割
-	static inline StringVector split( const std::string& str, const std::string& delims = "\t\n ", unsigned int maxSplits = 0)
-	{
-		StringVector ret;
-		unsigned int numSplits = 0;
-
-		// Use STL methods
-		size_t start, pos;
-		start = 0;
-		do
-		{
-			pos = str.find_first_of(delims, start);
-			if (pos == start)
-			{
-				ret.emplace_back("");
-				start = pos + 1;
-			}
-			else if (pos == std::string::npos || (maxSplits && numSplits == maxSplits))
-			{
-				ret.emplace_back( str.substr(start) );
-				break;
-			}
-			else
-			{
-				ret.emplace_back( str.substr(start, pos - start) );
-				start = pos + 1;
-			}
-			++numSplits;
-
-		} while (pos != std::string::npos);
-		return std::move(ret);
-	}
-
-	static inline void split(const std::string& str, StringVector& ret, const std::string& delims = "\t\n ", unsigned int maxSplits = 0)
-	{
-		unsigned int numSplits = 0;
-
-		size_t start, pos;
-		start = 0;
-		do
-		{
-			pos = str.find_first_of(delims, start);
-			if (pos == start)
-			{
-				ret.emplace_back("");
-				start = pos + 1;
-			}
-			else if (pos == std::string::npos || (maxSplits && numSplits == maxSplits))
-			{
-				ret.emplace_back(str.substr(start));
-				break;
-			}
-			else
-			{
-
-				ret.emplace_back(str.substr(start, pos - start));
-				start = pos + 1;
-			}
-			++numSplits;
-		} while (pos != std::string::npos);
-	}
-
-	// 转小写
-	static inline void toLowerCase( std::string& str )
-	{
-		std::transform(
-			str.begin(),
-			str.end(),
-			str.begin(),
-			(int(*)(int))tolower);
-
-	}
-
-	// 转大写
-	static inline void toUpperCase( std::string& str )
-	{
-		std::transform(
-			str.begin(),
-			str.end(),
-			str.begin(),
-			(int(*)(int))toupper);
-	}
-
-	static inline std::string makeLowerCase(const char* str)
-	{
-		std::string strRet = str;
-		std::transform(
-			strRet.begin(),
-			strRet.end(),
-			strRet.begin(),
-			(int(*)(int))tolower);
-		return std::move(strRet);
-	}
-
-	static inline std::string makeUpperCase(const char* str)
-	{
-		std::string strRet = str;
-		std::transform(
-			strRet.begin(),
-			strRet.end(),
-			strRet.begin(),
-			(int(*)(int))toupper);
-		return std::move(strRet);
-	}
-
-	// 转为浮点数
-	static inline float toFloat( const std::string& str )
-	{
-		return (float)atof(str.c_str());
-	}
-
-	static inline double toDouble( const std::string& str )
-	{
-		return atof(str.c_str());
-	}
-
-	// 判断起始字符串
-	static inline bool startsWith(const std::string& str, const std::string& pattern, bool lowerCase = true)
-	{
-		size_t thisLen = str.length();
-		size_t patternLen = pattern.length();
-		if (thisLen < patternLen || patternLen == 0)
-			return false;
-
-		std::string startOfThis = str.substr(0, patternLen);
-		if (lowerCase)
-			toLowerCase(startOfThis);
-
-		return (startOfThis == pattern);
-	}
-
-	// 判断结束字符串
-	static inline bool endsWith(const std::string& str, const std::string& pattern, bool lowerCase = true)
-	{
-		size_t thisLen = str.length();
-		size_t patternLen = pattern.length();
-		if (thisLen < patternLen || patternLen == 0)
-			return false;
-
-		std::string endOfThis = str.substr(thisLen - patternLen, patternLen);
-		if (lowerCase)
-			toLowerCase(endOfThis);
-
-		return (endOfThis == pattern);
-	}
-
-	// 转换为标准路径
-	static inline std::string standardisePath( const std::string &init, bool bIsDir = true)
-	{
-		std::string path = init;
-
-		std::replace( path.begin(), path.end(), '\\', '/' );
-		if (path[path.length() - 1] != '/' && bIsDir)
-			path += '/';
-
-		return std::move(path);
-	}
-
-	// 分割文件名
-	static inline void splitFilename(const std::string& qualifiedName,std::string& outBasename, std::string& outPath)
-	{
-		std::string path = qualifiedName;
-		// Replace \ with / first
-		std::replace( path.begin(), path.end(), '\\', '/' );
-		// split based on final /
-		size_t i = path.find_last_of('/');
-
-		if (i == std::string::npos)
-		{
-			outPath = "";
-			outBasename = qualifiedName;
-		}
-		else
-		{
-			outBasename = path.substr(i+1, path.size() - i - 1);
-			outPath = path.substr(0, i+1);
-		}
-	}
-
-	// 字符串匹配
-	static inline bool match(const std::string& str, const std::string& pattern, bool caseSensitive = true)
-	{
-		std::string tmpStr = str;
-		std::string tmpPattern = pattern;
-		if (!caseSensitive)
-		{
-			toLowerCase(tmpStr);
-			toLowerCase(tmpPattern);
-		}
-
-		std::string::const_iterator strIt = tmpStr.begin();
-		std::string::const_iterator patIt = tmpPattern.begin();
-		std::string::const_iterator lastWildCardIt = tmpPattern.end();
-		while (strIt != tmpStr.end() && patIt != tmpPattern.end())
-		{
-			if (*patIt == '*')
-			{
-				lastWildCardIt = patIt;
-				++patIt;
-				if (patIt == tmpPattern.end())
-				{
-					strIt = tmpStr.end();
-				}
-				else
-				{
-					while(strIt != tmpStr.end() && *strIt != *patIt)
-						++strIt;
-				}
-			}
-			else
-			{
-				if (*patIt != *strIt)
-				{
-					if (lastWildCardIt != tmpPattern.end())
-					{
-						patIt = lastWildCardIt;
-						lastWildCardIt = tmpPattern.end();
-					}
-					else
-					{
-						return false;
-					}
-				}
-				else
-				{
-					++patIt;
-					++strIt;
-				}
-			}
-
-		}
-		if (patIt == tmpPattern.end() && strIt == tmpStr.end())
-		{
-			return true;
-		}
-		else
-		{
-			return false;
-		}
-	}
-
-	// 空字符串
-	static inline const std::string BLANK()
-	{
-		static const std::string temp = std::string("");
-		return std::move(temp);
-	}
-
-	//地球人都知道,恶心的std::string是没有CString的Format这个函数的,所以我们自己造
-	static inline std::string printf(const char *pszFormat, ...)
-	{
-		va_list argptr;
-		va_start(argptr, pszFormat);
-		std::string result=printf(pszFormat,argptr);
-		va_end(argptr);
-		return std::move(result);
-	}
-
-	//地球人都知道,恶心的std::string是没有CString的Format这个函数的,所以我们自己造
-	static inline std::string printf2(const char *pszFormat, ...)
-	{
-		va_list argptr;
-		va_start(argptr, pszFormat);
-		std::string result=printf2(pszFormat,argptr);
-		va_end(argptr);
-		return std::move(result);
-	}
-
-	//地球人都知道,恶心的std::string是没有CString的Format这个函数的,所以我们自己造
-	static inline std::string printf2(const char *pszFormat, va_list argptr)
-	{
-		int         size   = 1024;
-		char*       buffer = new char[size];
-
-		while (1)
-		{
+/*!
+ * \file TimeUtils.hpp
+ * \project	WonderTrader
+ *
+ * \author Wesley
+ * \date 2020/03/30
+ * 
+ * \brief 时间处理的封装
+ */
+#pragma once
+#include <stdint.h>
+#include <sys/timeb.h>
 #ifdef _MSC_VER
-			int n = _vsnprintf(buffer, size, pszFormat, argptr);
+#include <time.h>
 #else
-			int n = vsnprintf(buffer, size, pszFormat, argptr);
+#include <sys/time.h>
 #endif
-			if (n > -1 && n < size)
-			{
-				std::string s(buffer);
-				delete [] buffer;
-				return s;
-			}
+#include <string>
+#include <string.h>
+#include<chrono>
 
-			if (n > -1)     size  = n+1; // ISO/IEC 9899:1999
-			else            size *= 2;   // twice the old size
 
-			delete [] buffer;
-			buffer = new char[size];
-		}
-	}
+/*
+项目中大多数时间是数值型时间, 代码注释很难精确描述, 使用时建议查看源码
+*/
 
-    // 字符串延长
-	static inline std::string extend(const char* str, uint32_t length)
-	{
-		if(strlen(str) >= length)
-			return str;
+/*
+时间及结构体转换代码提示
 
-		std::string ret = str;
-		uint32_t spaces = length - (uint32_t)strlen(str);
-		uint32_t former = spaces/2;
-		uint32_t after = spaces - former;
-		for(uint32_t i = 0; i < former; i++)
-		{
-			ret.insert(0, " ");
-		}
-
-		for(uint32_t i = 0; i < after; i++)
-		{
-			ret += " ";
-		}
-		return std::move(ret);
-	}
-
-	//地球人都知道,恶心的std::string是没有CString的Format这个函数的,所以我们自己造
-	static inline std::string printf(const char* pszFormat, va_list argptr)
-	{
-		int size = 1024;
-		int len=0;
-		std::string ret;
-		for ( ;; )
-		{
-			ret.resize(size + 1,0);
-			char *buf=(char *)ret.c_str();   
-			if ( !buf )
-			{
-				return BLANK();
-			}
-
-			va_list argptrcopy;
-			va_copy(argptrcopy, argptr);
-
-#ifdef _MSC_VER
-			len = _vsnprintf(buf, size, pszFormat, argptrcopy);
-#else
-			len = vsnprintf(buf, size, pszFormat, argptrcopy);
-#endif
-			va_end(argptrcopy);
-
-			if ( len >= 0 && len <= size )
-			{
-				// ok, there was enough space
-				break;
-			}
-			size *= 2;
-		}
-		ret.resize(len);
-		return std::move(ret);
-	}
-
-	// 取得右边的N个字符
-	static inline std::string right(const std::string &src,size_t nCount)
-	{
-		if(nCount>src.length())
-			return BLANK();
-		return std::move(src.substr(src.length()-nCount,nCount));
-	}
-
-	// 取左边的N个字符
-	static inline std::string left(const std::string &src,size_t nCount)
-	{
-		return std::move(src.substr(0,nCount));
-	}
-
-    // 获取字符长度
-	static inline size_t charCount(const std::string &src,char ch)
-	{
-		size_t result=0;
-		for(size_t i=0;i<src.length();i++)
-		{
-			if(src[i]==ch)result++;
-		}
-		return result;
-	}
-
-    // 字符串替换
-	static inline void replace(std::string& str, const char* src, const char* des)
-	{
-		std::string ret = "";
-		std::size_t srcLen = strlen(src);
-		std::size_t lastPos = 0;
-		std::size_t pos = str.find(src);
-		while(pos != std::string::npos)
-		{
-			ret += str.substr(lastPos, pos-lastPos);
-			ret += des;
-
-			lastPos = pos + srcLen;
-			pos = str.find(src, lastPos);
-		}
-		ret += str.substr(lastPos, pos);
-
-		str = ret;
-	}
-
-    // 将 int64 格式化字符串
-	static inline std::string fmtInt64(int64_t v)
-	{
-		char buf[64] = { 0 };
-#ifdef _MSC_VER
-		int pos = sprintf(buf, "%I64d", v);
-#else
-		int pos = sprintf(buf, "%lld", (long long)v);
-#endif
-		return buf;
-	}
-
-    // 将 uint64 格式化字符串
-	static inline std::string fmtUInt64(uint64_t v)
-	{
-		char buf[64] = { 0 };
-#ifdef _MSC_VER
-		int pos = sprintf(buf, "%I64u", v);
-#else
-		int pos = sprintf(buf, "%llu", (unsigned long long)v);
-#endif
-		return buf;
-	}
+struct timeb{
+	time_t time;   // 为1970-01-01至今的秒数
+	unsigned short millitm; // 千分之一秒即毫秒
+	short timezone;  // 为时区和Greenwich相差的时间，单位为分钟
+	short dstflag;   // 为日光节约时间的修正状态，如果为非0代表启用日光节约时间修正
 };
+
+timeb now;		// 时间结构体
+ftime(&now);	// 取得当前日期和时间
+
+struct tm {
+	int tm_sec;         // 秒，范围从 0 到 59
+	int tm_min;         // 分，范围从 0 到 59
+	int tm_hour;        // 小时，范围从 0 到 23
+	int tm_mday;        // 一月中的第几天，范围从 1 到 31
+	int tm_mon;         // 月份，范围从 0 到 11
+	int tm_year;        // 自 1900 起的年数
+	int tm_wday;        // 一周中的第几天，范围从 0 到 6
+	int tm_yday;        // 一年中的第几天，范围从 0 到 365
+	int tm_isdst;       // 夏令时
+};
+
+// 获取本地时间结构体
+tm * tNow = localtime(&(now.time));
+*/
+
+#define CTIME_BUF_SIZE 64
+
+class TimeUtils {
+	
+public:
+	// 获取本地数值型时间: 精确到毫秒
+	static inline int64_t getLocalTimeNow(void)
+	{
+		timeb now;
+		ftime(&now);
+		return now.time * 1000 + now.millitm;
+	}
+	// 获取本地时间: 纳秒
+	static inline int64_t getLocalTimeNano(void)
+	{
+		return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+	}
+	// 获取本地时间: 字符串
+	static inline std::string getLocalTime(bool bIncludeMilliSec = true)
+	{
+		timeb now;
+		ftime(&now);
+		tm * tNow = localtime(&(now.time));
+
+		char str[64] = {0};
+		if(bIncludeMilliSec)
+			sprintf(str, "%02d:%02d:%02d,%03d", tNow->tm_hour, tNow->tm_min, tNow->tm_sec, now.millitm);
+		else
+			sprintf(str, "%02d:%02d:%02d", tNow->tm_hour, tNow->tm_min, tNow->tm_sec);
+		return str;
+	}
+
+	// 返回当前时间字符串
+	static inline std::string now(void) 
+	{
+		using namespace std; // For time_t, time and ctime;
+		time_t now = time(0);
+		std::string str = ctime(&now);
+		return str;
+	}
+
+	// 获取格式化时间
+	static inline std::string getYYYYMMDD(void)
+	{
+		std::string yyyymmdd;
+		tm local;
+		time_t now;
+		time(&now);
+#ifdef _WIN32
+		localtime_s(&local, &now);
+#else
+		localtime_r(&now, &local);
+#endif
+		char year[5];
+		sprintf(year, "%d", local.tm_year + 1900);
+		char month[3];
+		sprintf(month, "%02d",local.tm_mon+1);
+		char day[3];
+		sprintf(day, "%02d",local.tm_mday);
+		std::string ofilename;
+		yyyymmdd.append(year);
+		yyyymmdd.append(month);
+		yyyymmdd.append(day);
+		return yyyymmdd;
+	}
+	// 获取格式化时间
+	static inline uint64_t getYYYYMMDDhhmmss()
+	{
+		timeb now;		// 时间结构体
+		ftime(&now);	// 取得当前日期和时间
+		// 获取本地时间结构体
+		tm * tNow = localtime(&(now.time));
+		// 数值型日期(yyyymmdd) 20220208
+		uint64_t date = (tNow->tm_year + 1900) * 10000 + (tNow->tm_mon + 1) * 100 + tNow->tm_mday;
+		// 数值型时间(HHMMSS) 225900
+		uint64_t time = tNow->tm_hour * 10000 + tNow->tm_min * 100 + tNow->tm_sec;
+		return date * 1000000 + time;
+	}
+	// 获取当前数值型日期(yyyymmdd)和数值型时间(精确到毫秒: HHMMSS000)
+	static inline void getDateTime(uint32_t &date, uint32_t &time)
+	{
+		timeb now;
+		ftime(&now);
+
+		tm * tNow = localtime(&(now.time));
+
+		date = (tNow->tm_year+1900)*10000 + (tNow->tm_mon+1)*100 + tNow->tm_mday;
+		
+		time = tNow->tm_hour*10000 + tNow->tm_min*100 + tNow->tm_sec;
+		time *= 1000;
+		time += now.millitm;
+	}
+
+	// 获取当前数值型日期, 精确到日
+	static inline uint32_t getCurDate()
+	{
+		timeb now;
+		ftime(&now);
+
+		tm * tNow = localtime(&(now.time));
+
+		uint32_t date = (tNow->tm_year+1900)*10000 + (tNow->tm_mon+1)*100 + tNow->tm_mday;
+
+		return date;
+	}
+
+	// 获取周几(0-6)
+	static inline uint32_t getWeekDay(uint32_t uDate = 0)
+	{
+		time_t ts = 0;
+		if(uDate == 0)
+		{
+			timeb now;
+			ftime(&now);
+			ts = now.time;
+		}
+		else
+		{
+			tm t;	
+			memset(&t,0,sizeof(tm));
+			t.tm_year = uDate/10000 - 1900;
+			t.tm_mon = (uDate%10000)/100 - 1;
+			t.tm_mday = uDate % 100;
+			ts = mktime(&t);
+		}
+
+		tm * tNow = localtime(&ts);
+	
+		return tNow->tm_wday;
+	}
+
+	// 获取当前数值型时间, 精确到秒
+	static inline uint32_t getCurMin()
+	{
+		timeb now;
+		ftime(&now);
+
+		tm * tNow = localtime(&(now.time));
+
+		uint32_t time = tNow->tm_hour*10000 + tNow->tm_min*100 + tNow->tm_sec;
+
+		return time;
+	}
+
+	// 获取时间字符串
+	static inline std::string getYYYYMMDD_hhmmss(void)
+	{
+		std::string datetime_fmt_str = "";
+		tm local;
+		time_t now;
+		time(&now);
+#ifdef _WIN32
+		localtime_s(&local, &now);
+#else
+		localtime_r(&now, &local);
+#endif
+		char year[5] = {'\0'};
+		sprintf(year, "%d", local.tm_year + 1900);
+		char month[3]  = {'\0'};
+		sprintf(month, "%02d",local.tm_mon+1);
+		char day[3]  = {'\0'};
+		sprintf(day, "%02d",local.tm_mday);
+		char hh[3]  = {'\0'};
+		sprintf(hh, "%02d", local.tm_hour);
+		char mm[3]  = {'\0'};
+		sprintf(mm, "%02d", local.tm_min);
+		char ss[3]  = {'\0'};
+		sprintf(ss, "%02d", local.tm_sec);
+		std::string ofilename;
+		datetime_fmt_str.append(year);
+		datetime_fmt_str.append(month);
+		datetime_fmt_str.append(day);
+		datetime_fmt_str.append("_");
+		datetime_fmt_str.append(hh);
+		datetime_fmt_str.append(mm);
+		datetime_fmt_str.append(ss);
+		return datetime_fmt_str;
+	}
+
+	//20120512 09:15:00 -> 毫秒
+	//支持如下格式的字符串: 
+	// 20120512 09:15:00 or 20120512 09:15:00 999
+	// 20120512091500 or 20120512091500999
+	static inline int64_t makeTime(std::string time_str)
+	{
+	    //time_str = StringUtils::trim(time_str, ' ');
+		//time_str = StringUtils::trim(time_str, ':');
+		uint32_t len = (uint32_t)time_str.size();
+		if (len < 14) return 0;
+		tm t;	
+		memset(&t,0,sizeof(tm));
+		t.tm_year = atoi(time_str.substr(0, 4).c_str()) - 1900;
+		t.tm_mon = atoi(time_str.substr(4,2).c_str()) - 1;
+		t.tm_mday = atoi(time_str.substr(6,2).c_str());
+		t.tm_hour = atoi(time_str.substr(8,2).c_str());
+		t.tm_min = atoi(time_str.substr(10,2).c_str());
+		t.tm_sec = atoi(time_str.substr(12,2).c_str());
+		int millisec = 0;
+		if ( len == 17){ //说明还有毫秒
+			millisec = atoi(time_str.substr(14,3).c_str());
+		}
+		//t.tm_isdst 	
+		time_t ts = mktime(&t);
+		if (ts == -1) return 0;
+		return ts * 1000+ millisec;
+	}
+
+	static inline int32_t getTZOffset()
+	{
+		static int32_t offset = 99;
+		if(offset == 99)
+		{
+			time_t now = time(NULL);
+			tm tm_ltm = *localtime(&now);
+			tm tm_gtm = *gmtime(&now);
+
+			time_t _gt = mktime(&tm_gtm);
+			tm _gtm2 = *localtime(&_gt);
+
+			offset = (uint32_t)(((now - _gt) + (_gtm2.tm_isdst ? 3600 : 0)) / 60);
+			offset /= 60;
+		}
+
+		return offset;
+	}
+
+	// 将数值型 lDate 和 lTime 转为数值型时间, 精确到毫秒
+	static inline int64_t makeTime(long lDate, long lTimeWithMs, bool isGM = false)
+	{
+		tm t;	
+		memset(&t,0,sizeof(tm));
+		t.tm_year = lDate/10000 - 1900;
+		t.tm_mon = (lDate%10000)/100 - 1;
+		t.tm_mday = lDate % 100;
+		t.tm_hour = lTimeWithMs/10000000;
+		t.tm_min = (lTimeWithMs%10000000)/100000;
+		t.tm_sec = (lTimeWithMs%100000)/1000;
+		int millisec = lTimeWithMs%1000;
+		//t.tm_isdst 	
+		time_t ts = mktime(&t);
+		if (isGM)
+			ts -= getTZOffset() * 3600;
+		if (ts == -1) return 0;
+		return ts * 1000+ millisec;
+	}
+
+	// 将数值型时间(自动判断毫秒)转为字符串
+	static std::string timeToString(int64_t mytime)
+	{
+		if (mytime == 0) return "";
+		int64_t sec = mytime/1000;
+		int msec = (int) (mytime - sec * 1000);
+		if (msec < 0) return "";
+		time_t tt =  sec;
+		struct tm t;
+#ifdef _WIN32
+		localtime_s(&t, &tt);
+#else
+		localtime_r(&tt, &t);
+#endif
+		char tm_buf[64] = {'\0'};
+		if (msec > 0) //是否有毫秒
+		   sprintf(tm_buf,"%4d%02d%02d%02d%02d%02d.%03d",t.tm_year+1900, t.tm_mon+1, t.tm_mday,
+			t.tm_hour, t.tm_min, t.tm_sec, msec);
+		else 
+		   sprintf(tm_buf,"%4d%02d%02d%02d%02d%02d",t.tm_year+1900, t.tm_mon+1, t.tm_mday,
+			t.tm_hour, t.tm_min, t.tm_sec);
+		return tm_buf;
+	};
+
+	// 数值型日期(精确到日)计算, 返回数值型日期
+	static uint32_t getNextDate(uint32_t curDate, int days = 1)
+	{
+		tm t;	
+		memset(&t,0,sizeof(tm));
+		t.tm_year = curDate/10000 - 1900;
+		t.tm_mon = (curDate%10000)/100 - 1;
+		t.tm_mday = curDate % 100;
+		//t.tm_isdst 	
+		time_t ts = mktime(&t);
+		ts += days*86400;
+
+		tm* newT = localtime(&ts);
+		return (newT->tm_year+1900)*10000 + (newT->tm_mon+1)*100 + newT->tm_mday;
+	}
+
+	// 数值型分钟(HHMM)计算
+	static uint32_t getNextMinute(int32_t curTime, int32_t mins = 1)
+	{
+		int32_t curHour = curTime / 100;
+		int32_t curMin = curTime % 100;
+		int32_t totalMins = curHour * 60 + curMin;
+		totalMins += mins;
+
+		if (totalMins >= 1440)
+			totalMins -= 1440;
+		else if (totalMins < 0)
+			totalMins += 1440;
+
+		int32_t ret = (totalMins / 60) * 100 + totalMins % 60;
+		return (uint32_t)ret;
+	}
+
+	// 数值型年月(yyyymm)计算
+	static uint32_t getNextMonth(uint32_t curMonth, int months = 1)
+	{
+		uint32_t uYear = curMonth/100;
+		uint32_t uMonth = curMonth%100;
+
+		uint32_t uAddYear = months/12;
+		uint32_t uAddMon = months%12;
+
+		uYear += uAddYear;
+		uMonth += uAddMon;
+		if(uMonth > 12)
+		{
+			uYear ++;
+			uMonth -= 12;
+		}
+		else if(uMonth <= 0)
+		{
+			uYear --;
+			uMonth = 12;
+		}
+
+		return uYear*100 + uMonth;
+	}
+
+	static inline uint64_t timeToMinBar(uint32_t uDate, uint32_t uTime)
+	{
+		return (uint64_t)((uDate-19900000)*10000) + uTime;
+	}
+
+	static inline uint32_t minBarToDate(uint64_t minTime)
+	{
+		return (uint32_t)(minTime/10000 + 19900000);
+	}
+
+	static inline uint32_t minBarToTime(uint64_t minTime)
+	{
+		return (uint32_t)(minTime%10000);
+	}
+
+	// 判断是否是周末
+	static inline bool isWeekends(uint32_t uDate)
+	{
+		tm t;	
+		memset(&t,0,sizeof(tm));
+		t.tm_year = uDate/1/10000 - 1900;
+		t.tm_mon = (uDate/1%10000)/100 - 1;
+		t.tm_mday = uDate/1 % 100;
+
+		time_t tt = mktime(&t);
+		tm* tmt = localtime(&tt);
+		if(tmt == NULL)
+			return true;
+	
+		if(tmt->tm_wday == 0 || tmt->tm_wday==6)
+			return true;
+
+		return false;
+	}
+
+public:
+	class Time32
+	{
+	public:
+		Time32():_msec(0){}
+
+		Time32(time_t _time, uint32_t msecs = 0)
+		{
+#ifdef _WIN32
+			localtime_s(&t, &_time);
+#else
+			localtime_r(&_time, &t);
+#endif
+			_msec = msecs;
+		}
+
+		Time32(uint64_t _time)
+		{
+			time_t _t = _time/1000;
+			_msec = (uint32_t)_time%1000;
+#ifdef _WIN32
+			localtime_s(&t, &_t);
+#else
+			localtime_r(&_t, &t);
+#endif
+		}
+
+		void from_local_time(uint64_t _time)
+		{
+			time_t _t = _time/1000;
+			_msec = (uint32_t)_time%1000;
+#ifdef _WIN32
+			localtime_s(&t, &_t);
+#else
+			localtime_r(&_t, &t);
+#endif
+		}
+
+		uint32_t date()
+		{
+			return (t.tm_year + 1900)*10000 + (t.tm_mon + 1)*100 + t.tm_mday;
+		}
+
+		uint32_t time()
+		{
+			return t.tm_hour*10000 + t.tm_min*100 + t.tm_sec;
+		}
+
+		uint32_t time_ms()
+		{
+			return t.tm_hour*10000000 + t.tm_min*100000 + t.tm_sec*1000 + _msec;
+		}
+
+		const char* fmt(const char* sfmt = "%Y.%m.%d %H:%M:%S", bool hasMilliSec = false) const
+		{
+			static char buff[1024];
+			uint32_t length = (uint32_t)strftime(buff, 1023, sfmt, &t);
+			if (hasMilliSec)
+				sprintf(buff + length, ",%03u", _msec);
+			return buff;
+		}
+
+	protected:
+		struct tm t;
+		uint32_t _msec;
+	};
+
+	class Ticker
+	{
+	public:
+		Ticker()
+		{
+			_tick = std::chrono::high_resolution_clock::now();
+		}
+
+		void reset()
+		{
+			_tick = std::chrono::high_resolution_clock::now();
+		}
+
+		inline int64_t seconds() const 
+		{
+			auto now = std::chrono::high_resolution_clock::now();
+			auto td = now - _tick;
+			return std::chrono::duration_cast<std::chrono::seconds>(td).count();
+		}
+
+		inline int64_t milli_seconds() const
+		{
+			auto now = std::chrono::high_resolution_clock::now();
+			auto td = now - _tick;
+			return std::chrono::duration_cast<std::chrono::milliseconds>(td).count();
+		}
+
+		inline int64_t micro_seconds() const
+		{
+			auto now = std::chrono::high_resolution_clock::now();
+			auto td = now - _tick;
+			return std::chrono::duration_cast<std::chrono::microseconds>(td).count();
+		}
+
+		inline int64_t nano_seconds() const
+		{
+			auto now = std::chrono::high_resolution_clock::now();
+			auto td = now - _tick;
+			return std::chrono::duration_cast<std::chrono::nanoseconds>(td).count();
+		}
+
+	private:
+		std::chrono::time_point<std::chrono::high_resolution_clock> _tick;
+	};
+};
+
 ```

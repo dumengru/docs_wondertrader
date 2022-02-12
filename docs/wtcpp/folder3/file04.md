@@ -1,14 +1,18 @@
-# 读取CSV文件
+# CsvHelper.h
 
 source: `{{ page.path }}`
 
-## CsvHelper.h
-
-读取CSV文件, 内容比较简单: 加载文件 -> 获取列名 -> 逐行读取 -> 数据类型转换
-
-### CsvReader
-
 ```cpp
+#pragma once
+#include <string.h>
+#include <string>
+#include <unordered_map>
+#include <stdint.h>
+#include <fstream>
+#include <vector>
+#include <sstream>
+
+// 读取CSV文件, 内容比较简单: 加载文件 -> 获取列名 -> 逐行读取 -> 数据类型转换
 class CsvReader
 {
 public:
@@ -67,14 +71,22 @@ private:
 	char			_buffer[1024];
 	std::string		_item_splitter;		// 文件分隔符
 
-	std::unordered_map<std::string, int32_t> _fields_map;						// 列名字典
-	std::vector<std::string> _current_cells;	// 每列数据字段
+	std::unordered_map<std::string, int32_t> _fields_map;	// 列名字典
+	std::vector<std::string> _current_cells;				// 每列数据字段
 };
+
 ```
 
 ## CsvHelper.cpp
 
 ```cpp
+#include "CsvHelper.h"
+
+#include <limits.h>
+
+#include "../Share/StdUtils.hpp"
+#include "../Share/StrUtil.hpp"
+
 CsvReader::CsvReader(const char* item_splitter /* = "," */)
 	: _item_splitter(item_splitter)
 {}
@@ -88,7 +100,7 @@ bool CsvReader::load_from_file(const char* filename)
 	_ifs.open(filename);
 
 	_ifs.getline(_buffer, 1024);
-	// 判断是不是UTF-8BOM 编码
+	//判断是不是UTF-8BOM 编码
 	static char flag[] = { (char)0xEF, (char)0xBB, (char)0xBF };
 	char* buf = _buffer;
 	if (memcmp(_buffer, flag, sizeof(char) * 3) == 0)
@@ -102,7 +114,7 @@ bool CsvReader::load_from_file(const char* filename)
 	StrUtil::replace(row, "\"", "");
 	StrUtil::replace(row, "'", "");
 
-	// 将字段名转成小写
+	//将字段名转成小写
 	StrUtil::toLowerCase(row);
 
 	StringVector fields = StrUtil::split(row, _item_splitter.c_str());
@@ -114,6 +126,7 @@ bool CsvReader::load_from_file(const char* filename)
 
 		_fields_map[field] = i;
 	}
+
 	return true;
 }
 

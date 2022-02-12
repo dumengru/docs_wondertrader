@@ -1,200 +1,150 @@
-# CTA策略示例
+# 自定义数据块
 
 source: `{{ page.path }}`
 
-## WtStraDualThrust.h
+## DataDefine.h
 
-### WtStraDualThrust
-
-```cpp
-class WtStraDualThrust : public CtaStrategy
-{
-public:
-	WtStraDualThrust(const char* id);
-	virtual ~WtStraDualThrust();
-
-public:
-	// 获取策略工厂名称
-	virtual const char* getFactName() override;
-	// 获取策略名称
-	virtual const char* getName() override;
-	// 通过配置文件初始化策略
-	virtual bool init(WTSVariant* cfg) override;
-
-	virtual void on_schedule(ICtaStraCtx* ctx, uint32_t curDate, uint32_t curTime) override;
-
-	virtual void on_init(ICtaStraCtx* ctx) override;
-
-	virtual void on_tick(ICtaStraCtx* ctx, const char* stdCode, WTSTickData* newTick) override;
-
-private:
-	//指标参数
-	double		_k1;
-	double		_k2;
-	uint32_t	_days;
-
-	//数据周期
-	std::string _period;
-	//K线条数
-	uint32_t	_count;
-
-	//合约代码
-	std::string _code;
-
-	bool		_isstk;
-};
-```
-
-## WtStraDualThrust.cpp
+定义各种数据块类型
 
 ```cpp
+const char BLK_FLAG[] = "&^%$#@!\0";
 
-extern const char* FACT_NAME;
+const int FLAG_SIZE = 8;
 
-WtStraDualThrust::WtStraDualThrust(const char* id)
-	: CtaStrategy(id)
-{}
-
-
-WtStraDualThrust::~WtStraDualThrust()
-{}
-
-const char* WtStraDualThrust::getFactName()
+// 数据块类型
+typedef enum tagBlockType
 {
-	return FACT_NAME;
-}
+	BT_RT_Minute1		= 1,	//实时1分钟线
+	BT_RT_Minute5		= 2,	//实时5分钟线
+	BT_RT_Ticks			= 3,	//实时tick数据
+	BT_RT_Cache			= 4,	//实时缓存
+	BT_RT_Trnsctn		= 5,	//实时逐笔成交
+	BT_RT_OrdDetail		= 6,	//实时逐笔委托
+	BT_RT_OrdQueue		= 7,	//实时委托队列
 
-const char* WtStraDualThrust::getName()
+	BT_HIS_Minute1		= 21,	//历史1分钟线
+	BT_HIS_Minute5		= 22,	//历史5分钟线
+	BT_HIS_Day			= 23,	//历史日线
+	BT_HIS_Ticks		= 24,	//历史tick
+	BT_HIS_Trnsctn		= 25,	//历史逐笔成交
+	BT_HIS_OrdDetail	= 26,	//历史逐笔委托
+	BT_HIS_OrdQueue		= 27	//历史委托队列
+} BlockType;
+
+#define BLOCK_VERSION_RAW	1	//普通版本
+#define BLOCK_VERSION_CMP	2	//压缩版本
+
+typedef struct _BlockHeader
 {
-	return "DualThrust";
-}
+	char		_blk_flag[FLAG_SIZE];
+	uint16_t	_type;
+	uint16_t	_version;
+} BlockHeader;
 
-bool WtStraDualThrust::init(WTSVariant* cfg)
+typedef struct _BlockHeaderV2
 {
-	if (cfg == NULL)
-		return false;
+	char		_blk_flag[FLAG_SIZE];
+	uint16_t	_type;
+	uint16_t	_version;
 
-	_days = cfg->getUInt32("days");
-	_k1 = cfg->getDouble("k1");
-	_k2 = cfg->getDouble("k2");
+	uint64_t	_size;		//压缩后的数据大小
+} BlockHeaderV2;
 
-	_period = cfg->getCString("period");
-	_count = cfg->getUInt32("count");
-	_code = cfg->getCString("code");
-	_isstk = cfg->getBoolean("stock");
+#define BLOCK_HEADER_SIZE	sizeof(BlockHeader)
+#define BLOCK_HEADERV2_SIZE sizeof(BlockHeaderV2)
 
-	return true;
-}
-
-void WtStraDualThrust::on_schedule(ICtaStraCtx* ctx, uint32_t curDate, uint32_t curTime)
+typedef struct _RTBlockHeader : BlockHeader
 {
-	// 如果是股票, 添加后缀
-	std::string code = _code;
-	if (_isstk)
-		code += "Q";
-	
-	// 获取K线信息
-	WTSKlineSlice *kline = ctx->stra_get_bars(code.c_str(), _period.c_str(), _count, true);
-	if(kline == NULL)
-	{
-		// 这里可以输出一些日志
-		return;
-	}
+	uint32_t _size;
+	uint32_t _capacity;
+} RTBlockHeader;
 
-	if (kline->size() == 0)
-	{
-		kline->release();
-		return;
-	}
-
-	// 设置交易单位
-	uint32_t trdUnit = 1;
-	if (_isstk)
-		trdUnit = 100;
-
-	int32_t days = (int32_t)_days;
-
-	// 获取价格相关信息
-	double hh = kline->maxprice(-days, -2);
-	double ll = kline->minprice(-days, -2);
-
-	// 提取某个价格
-	WTSValueArray* closes = kline->extractData(KFT_CLOSE);
-	double hc = closes->maxvalue(-days, -2);
-	double lc = closes->minvalue(-days, -2);
-	double curPx = closes->at(-1);
-	closes->release();		///!!!这个释放一定要做
-
-	double openPx = kline->open(-1);
-	double highPx = kline->high(-1);
-	double lowPx = kline->low(-1);
-
-	// 计算上下轨
-	double upper_bound = openPx + _k1 * (max(hh - lc, hc - ll));
-	double lower_bound = openPx - _k2 * max(hh - lc, hc - ll);
-
-	// 获取合约信息
-	WTSCommodityInfo* commInfo = ctx->stra_get_comminfo(_code.c_str());
-	// 获取当前持仓
-	double curPos = ctx->stra_get_position(_code.c_str()) / trdUnit;
-	if(decimal::eq(curPos,0))
-	{
-		if(highPx >= upper_bound)
-		{
-			ctx->stra_enter_long(_code.c_str(), 2 * trdUnit, "DT_EnterLong");
-			//向上突破
-			ctx->stra_log_info("向上突破%.2f>=%.2f,多仓进场", highPx, upper_bound);
-		}
-		else if (lowPx <= lower_bound && !_isstk)
-		{
-			ctx->stra_enter_short(_code.c_str(), 2 * trdUnit, "DT_EnterShort");
-			//向下突破
-			ctx->stra_log_info("向下突破%.2f<=%.2f,空仓进场", lowPx, lower_bound);
-		}
-	}
-	else if (decimal::gt(curPos, 0))
-	{
-		if(lowPx <= lower_bound)
-		{
-			//多仓出场
-			ctx->stra_exit_long(_code.c_str(), 2 * trdUnit, "DT_ExitLong");
-			ctx->stra_log_info("向下突破%.2f<=%.2f,多仓出场", lowPx, lower_bound);
-		}
-	}
-	else if (decimal::lt(curPos, 0))
-	{
-		if (highPx >= upper_bound && !_isstk)
-		{
-			//空仓出场
-			ctx->stra_exit_short(_code.c_str(), 2 * trdUnit, "DT_ExitShort");
-			ctx->stra_log_info("向上突破%.2f>=%.2f,空仓出场", highPx, upper_bound);
-		}
-	}
-	// 保存用户数据
-	ctx->stra_save_user_data("test", "waht");
-
-	// 这个释放一定要做
-	kline->release();
-}
-
-// 策略初始化
-void WtStraDualThrust::on_init(ICtaStraCtx* ctx)
+// 每日实时数据块头部
+typedef struct _RTDayBlockHeader : RTBlockHeader
 {
-	std::string code = _code;
-	if (_isstk)
-		code += "Q";
-	WTSKlineSlice *kline = ctx->stra_get_bars(code.c_str(), _period.c_str(), _count, true);
-	if (kline == NULL)
-	{
-		//这里可以输出一些日志
-		return;
-	}
+	uint32_t		_date;
+} RTDayBlockHeader;
 
-	kline->release();
-}
-
-void WtStraDualThrust::on_tick(ICtaStraCtx* ctx, const char* stdCode, WTSTickData* newTick)
+// 实时K线数据块
+typedef struct _RTKlineBlock : _RTDayBlockHeader
 {
-	//没有什么要处理
-}
+	WTSBarStruct	_bars[0];
+} RTKlineBlock;
+
+// tick数据数据块
+typedef struct _RTTickBlock : RTDayBlockHeader
+{
+	WTSTickStruct	_ticks[0];
+} RTTickBlock;
+
+// 逐笔成交数据块
+typedef struct _RTTransBlock : RTDayBlockHeader
+{
+	WTSTransStruct	_trans[0];
+} RTTransBlock;
+
+// 逐笔委托数据块
+typedef struct _RTOrdDtlBlock : RTDayBlockHeader
+{
+	WTSOrdDtlStruct	_details[0];
+} RTOrdDtlBlock;
+
+// 委托队列数据块
+typedef struct _RTOrdQueBlock : RTDayBlockHeader
+{
+	WTSOrdQueStruct	_queues[0];
+} RTOrdQueBlock;
+
+typedef struct _TickCacheItem
+{
+	uint32_t		_date;
+	WTSTickStruct	_tick;
+} TickCacheItem;
+
+// 实时tick缓存
+typedef struct _RTTickCache : RTBlockHeader
+{
+	TickCacheItem	_ticks[0];
+} RTTickCache;
+
+
+// 历史Tick数据
+typedef struct _HisTickBlock : BlockHeader
+{
+	WTSTickStruct	_ticks[0];
+} HisTickBlock;
+
+// 历史Tick数据V2
+typedef struct _HisTickBlockV2 : BlockHeaderV2
+{
+	char			_data[0];
+} HisTickBlockV2;
+
+typedef struct _HisTransBlockV2 : BlockHeaderV2
+{
+	char			_data[0];
+} HisTransBlockV2;
+
+typedef struct _HisOrdDtlBlockV2 : BlockHeaderV2
+{
+	char			_data[0];
+} HisOrdDtlBlockV2;
+
+typedef struct _HisOrdQueBlockV2 : BlockHeaderV2
+{
+	char			_data[0];
+} HisOrdQueBlockV2;
+
+//历史K线数据
+typedef struct _HisKlineBlock : BlockHeader
+{
+	WTSBarStruct	_bars[0];
+} HisKlineBlock;
+
+//历史K线数据V2
+typedef struct _HisKlineBlockV2 : BlockHeaderV2
+{
+	char			_data[0];
+} HisKlineBlockV2;
 ```
+

@@ -2,6 +2,6 @@
 
 source: `{{ page.path }}`
 
-```tip
+```note
 Share 文件夹
 ```
