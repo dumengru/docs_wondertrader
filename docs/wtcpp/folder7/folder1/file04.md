@@ -1,7 +1,7 @@
-# WtCore
+# CTPLoader.cpp
 
 source: `{{ page.path }}`
 
-```note
+```cpp
 
 ```

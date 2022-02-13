@@ -1,7 +1,7 @@
-# WtCore
+# TraderSpi.h
 
 source: `{{ page.path }}`
 
-```note
+```cpp
 
 ```
