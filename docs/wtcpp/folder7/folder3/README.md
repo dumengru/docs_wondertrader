@@ -1,3 +1,3 @@
-# CTPLoader
+# CTPOpt
 
 source: `{{ page.path }}`

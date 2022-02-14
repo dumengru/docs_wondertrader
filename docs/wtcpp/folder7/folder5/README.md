@@ -1,3 +1,3 @@
-# CTPMini
+# XTP
 
 source: `{{ page.path }}`

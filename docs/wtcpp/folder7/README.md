@@ -1,4 +1,4 @@
-# 接口
+# 各类接口
 
 source: `{{ page.path }}`
 
