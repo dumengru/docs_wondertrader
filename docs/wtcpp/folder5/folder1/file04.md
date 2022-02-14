@@ -21,10 +21,12 @@ NS_WTP_END
 
 USING_NS_WTP;
 
-typedef std::vector<uint32_t> OrderIDs;
-
+typedef std::vector<uint32_t> OrderIDs;			// 订单列表
 typedef WTSHashMap<std::string>	WTSTickCache;
 
+// "MatchEngine": 尚不清楚具体细节, 暂命名为 匹配引擎吧
+
+// 匹配引擎回调接口
 class IMatchSink
 {
 public:
@@ -49,13 +51,14 @@ public:
 	virtual void handle_order(uint32_t localid, const char* stdCode, bool isBuy, double leftover, double price, bool isCanceled, uint64_t ordTime) = 0;
 
 	/*
-	 *
+	 * 输入订单
 	 */
 	virtual void handle_entrust(uint32_t localid, const char* stdCode, bool bSuccess, const char* message, uint64_t ordTime) = 0;
 };
 
 typedef std::function<void(double)> FuncCancelCallback;
 
+// 匹配引擎
 class MatchEngine
 {
 public:
@@ -67,37 +70,40 @@ private:
 	void	fire_orders(const char* stdCode, OrderIDs& to_erase);
 	void	match_orders(WTSTickData* curTick, OrderIDs& to_erase);
 	void	update_lob(WTSTickData* curTick);
-
+	// 获取品种对应最新价
 	inline WTSTickData*	grab_last_tick(const char* stdCode);
 
 public:
+	// 初始化
 	void	init(WTSVariant* cfg);
-
+	// 注册回调接口
 	void	regisSink(IMatchSink* sink) { _sink = sink; }
 
 	void	clear();
 
 	void	handle_tick(const char* stdCode, WTSTickData* curTick);
 
+	// 买入, 卖出撤单
 	OrderIDs	buy(const char* stdCode, double price, double qty, uint64_t curTime);
 	OrderIDs	sell(const char* stdCode, double price, double qty, uint64_t curTime);
-	double		cancel(uint32_t localid);
 	virtual OrderIDs cancel(const char* stdCode, bool isBuy, double qty, FuncCancelCallback cb);
+	// 修改订单状态: 撤单
+	double		cancel(uint32_t localid);
 
 private:
 	typedef struct _OrderInfo
 	{
 		char		_code[32];
-		bool		_buy;
-		double		_qty;
-		double		_left;
+		bool		_buy;			// 买入/卖出
+		double		_qty;			// 可成交量
+		double		_left;			// 市场成交量
 		double		_traded;
-		double		_limit;
-		double		_price;
-		uint32_t	_state;
+		double		_limit;			// 限价
+		double		_price;			// 最新成交价
+		uint32_t	_state;			// 订单状态
 		uint64_t	_time;
-		double		_queue;
-		bool		_positive;
+		double		_queue;			// 排队
+		bool		_positive;		// 是否主动成交
 
 		_OrderInfo()
 		{
@@ -106,16 +112,16 @@ private:
 	} OrderInfo;
 
 	typedef faster_hashmap<uint32_t, OrderInfo> Orders;
-	Orders	_orders;
+	Orders	_orders;		// 订单字典
 
 	typedef std::map<uint32_t, double>	LOBItems;
 
 	typedef struct _LmtOrdBook
 	{
 		LOBItems	_items;
-		uint32_t	_cur_px;
-		uint32_t	_ask_px;
-		uint32_t	_bid_px;
+		uint32_t	_cur_px;	// 最新价
+		uint32_t	_ask_px;	// ask
+		uint32_t	_bid_px;	// bid
 
 		void clear()
 		{
@@ -133,12 +139,12 @@ private:
 		}
 	} LmtOrdBook;
 	typedef faster_hashmap<std::string, LmtOrdBook> LmtOrdBooks;
-	LmtOrdBooks	_lmt_ord_books;
+	LmtOrdBooks	_lmt_ord_books;		// 订单簿字典
 
-	IMatchSink*	_sink;
+	IMatchSink*	_sink;				// 匹配引擎回调接口
 
 	double			_cancelrate;
-	WTSTickCache*	_tick_cache;
+	WTSTickCache*	_tick_cache;	// Tick数据缓存
 };
 ```
 
@@ -153,17 +159,19 @@ private:
 #include "../Share/decimal.h"
 #include "../WTSTools/WTSLogger.h"
 
+// 处理数据精度
 #define PRICE_DOUBLE_TO_INT_P(x) ((int32_t)((x)*10000.0 + 0.5))
 #define PRICE_DOUBLE_TO_INT_N(x) ((int32_t)((x)*10000.0 - 0.5))
 #define PRICE_DOUBLE_TO_INT(x) (((x)==DBL_MAX)?0:((x)>0?PRICE_DOUBLE_TO_INT_P(x):PRICE_DOUBLE_TO_INT_N(x)))
 
 extern uint32_t makeLocalOrderID();
 
+// 通过配置初始化匹配引擎
 void MatchEngine::init(WTSVariant* cfg)
 {
 	if (cfg == NULL)
 		return;
-
+	// cancelrate?
 	_cancelrate = cfg->getDouble("cancelrate");
 }
 
@@ -172,15 +180,18 @@ void MatchEngine::clear()
 	_orders.clear();
 }
 
+// 
 void MatchEngine::fire_orders(const char* stdCode, OrderIDs& to_erase)
 {
+	// 遍历订单簿字典
 	for (auto& v : _orders)
 	{
-		uint32_t localid = v.first;
-		OrderInfo& ordInfo = (OrderInfo&)v.second;
+		uint32_t localid = v.first;						// 编号
+		OrderInfo& ordInfo = (OrderInfo&)v.second;		// 订单簿
 
 		if (ordInfo._state == 0)	//需要激活
 		{
+			// 输入订单, 订单回报
 			_sink->handle_entrust(localid, stdCode, true, "", ordInfo._time);
 			_sink->handle_order(localid, stdCode, ordInfo._buy, ordInfo._left, ordInfo._limit, false, ordInfo._time);
 			ordInfo._state = 1;
@@ -190,9 +201,11 @@ void MatchEngine::fire_orders(const char* stdCode, OrderIDs& to_erase)
 
 void MatchEngine::match_orders(WTSTickData* curTick, OrderIDs& to_erase)
 {
+	// 当前时间
 	uint64_t curTime = (uint64_t)curTick->actiondate() * 1000000000 + curTick->actiontime();
 	uint64_t curUnixTime = TimeUtils::makeTime(curTick->actiondate(), curTick->actiontime());
 
+	// 遍历订单字典
 	for (auto& v : _orders)
 	{
 		uint32_t localid = v.first;
@@ -256,11 +269,13 @@ void MatchEngine::match_orders(WTSTickData* curTick, OrderIDs& to_erase)
 				}
 
 				double qty = min(volume, ordInfo._left);
+				// 回调成交回报
 				_sink->handle_trade(localid, ordInfo._code, ordInfo._buy, qty, ordInfo._price, price, ordInfo._time);
 
 				ordInfo._traded += qty;
 				ordInfo._left -= qty;
 
+				// 回调订单回报
 				_sink->handle_order(localid, ordInfo._code, ordInfo._buy, ordInfo._left, price, false, ordInfo._time);
 
 				if (ordInfo._left == 0)
@@ -320,11 +335,11 @@ void MatchEngine::match_orders(WTSTickData* curTick, OrderIDs& to_erase)
 				if (ordInfo._left == 0)
 					to_erase.emplace_back(localid);
 			}
-
 		}
 	}
 }
 
+// 更新啥？
 void MatchEngine::update_lob(WTSTickData* curTick)
 {
 	LmtOrdBook& curBook = _lmt_ord_books[curTick->code()];
@@ -366,13 +381,14 @@ void MatchEngine::update_lob(WTSTickData* curTick)
 	}
 }
 
-
+// 
 OrderIDs MatchEngine::buy(const char* stdCode, double price, double qty, uint64_t curTime)
 {
 	WTSTickData* lastTick = grab_last_tick(stdCode);
 	if (lastTick == NULL)
 		return OrderIDs();
 
+	// 获取本地订单ID和并填充订单信息
 	uint32_t localid = makeLocalOrderID();
 	OrderInfo& ordInfo = _orders[localid];
 	strcpy(ordInfo._code, stdCode);
@@ -505,6 +521,7 @@ void MatchEngine::handle_tick(const char* stdCode, WTSTickData* curTick)
 	}
 }
 
+// 获取品种最新tick数据
 WTSTickData* MatchEngine::grab_last_tick(const char* stdCode)
 {
 	if (NULL == _tick_cache)
