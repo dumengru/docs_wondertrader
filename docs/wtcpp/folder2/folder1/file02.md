@@ -1,230 +1,236 @@
-# BoostFile.hpp
+# IniHelper.hpp
 
 source: `{{ page.path }}`
 
 ```cpp
 /*!
- * \file BoostFile.hpp
+ * \file IniHelper.hpp
  * \project	WonderTrader
  *
  * \author Wesley
  * \date 2020/03/30
  * 
- * \brief boost库文件操作的辅助对象
+ * \brief Ini文件辅助类,利用boost的property_tree来实现,可以跨平台使用
  */
 #pragma once
-#include <boost/version.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/interprocess/detail/os_file_functions.hpp>
+
 #include <string>
+#include <vector>
+#include <map>
 
-#ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#else
-#include <unistd.h>
-#endif
+#include <boost/property_tree/ptree.hpp>  
+#include <boost/property_tree/ini_parser.hpp>
 
+/*
+property_tree是一个保存了多个属性的树形数据结构
 
-class BoostFile
+可以使用类似访问路径的方式问任意节点的属性, 而且每个节点都可以用类似STL的风格遍历子节点
+
+ property_tree适合于应用程序的配置数据处理, 可以解析xml, ini, json和info四种格式的文本数据据
+*/
+
+typedef std::vector<std::string>			FieldArray;
+typedef std::map<std::string, std::string>	FieldMap;
+
+class IniHelper
 {
+private:
+	boost::property_tree::ptree	_root;		// 树对象
+	std::string					_fname;		// 要读取的文件名
+	bool						_loaded;	// 
+
+	static const uint32_t MAX_KEY_LENGTH = 64;
+
 public:
-	BoostFile()
-	{
-		_handle=boost::interprocess::ipcdetail::invalid_file();		// 文件句柄
-	}
-	~BoostFile()
-	{
-		close_file();
-	}
-	// 创建新的文件对象
-	bool create_new_file(const char *name, boost::interprocess::mode_t mode = boost::interprocess::read_write, bool temporary = false)
-	{
-		_handle=boost::interprocess::ipcdetail::create_or_open_file(name,mode,boost::interprocess::permissions(),temporary);
+	IniHelper(): _loaded(false){}
 
-		if (valid())
-			return truncate_file(0);
-		return false;
-	}
-	// 创建或打开文件
-	bool create_or_open_file(const char *name, boost::interprocess::mode_t mode = boost::interprocess::read_write, bool temporary = false)
+	void	load(const char* szFile)
 	{
-		_handle=boost::interprocess::ipcdetail::create_or_open_file(name,mode,boost::interprocess::permissions(),temporary);
-
-		return valid();
-	}
-	// 打开已存在文件
-	bool open_existing_file(const char *name, boost::interprocess::mode_t mode = boost::interprocess::read_write, bool temporary = false)
-	{
-		_handle=boost::interprocess::ipcdetail::open_existing_file(name,mode,temporary);
-		return valid();
-	}
-	// 判断是否是无效文件
-	bool is_invalid_file()
-	{  
-		return _handle==boost::interprocess::ipcdetail::invalid_file();  
-	}
-	// 判断是否是有效文件
-	bool valid()
-	{
-		return _handle!=boost::interprocess::ipcdetail::invalid_file();
-	}
-	// 关闭文件
-	void close_file()
-	{
-		if(!is_invalid_file())
+		_fname = szFile;
+		try
 		{
-			boost::interprocess::ipcdetail::close_file(_handle);
-			_handle=boost::interprocess::ipcdetail::invalid_file();
+			boost::property_tree::ini_parser::read_ini(szFile, _root);
+		}
+		catch(...)
+		{
+
+		}
+		
+		_loaded = true;
+	}
+
+	void	save(const char* filename = "")
+	{
+		if (strlen(filename) > 0)
+			boost::property_tree::ini_parser::write_ini(filename, _root);
+		else
+			boost::property_tree::ini_parser::write_ini(_fname.c_str(), _root);
+	}
+
+	inline bool isLoaded() const{ return _loaded; }
+
+public:
+	// 擦除值
+	void	removeValue(const char* szSec, const char* szKey)
+	{
+		try
+		{
+			boost::property_tree::ptree& sec = _root.get_child(szSec);
+			sec.erase(szKey);
+		}
+		catch (...)
+		{
+			
 		}
 	}
-	// 删除文件
-	bool truncate_file (std::size_t size)
+	// 擦除节点
+	void	removeSection(const char* szSec)
 	{
-		return boost::interprocess::ipcdetail::truncate_file(_handle,size);
+		try
+		{
+			_root.erase(szSec);
+		}
+		catch (...)
+		{
+
+		}
 	}
-	// 获取文件大小
-	bool get_file_size(boost::interprocess::offset_t &size)
+	// 读取值模板
+	template<class T>
+	T	readValue(const char* szPath, T defVal)
 	{
-		return boost::interprocess::ipcdetail::get_file_size(_handle,size);
+		try
+		{
+			return _root.get<T>(szPath, defVal);
+		}
+		catch (...)
+		{
+			return defVal;
+		}
+	}
+	// 读取对应类型值
+	std::string	readString(const char* szSec, const char* szKey, const char* defVal = "")
+	{
+		static char path[MAX_KEY_LENGTH] = { 0 };
+		sprintf(path, "%s.%s", szSec, szKey);
+		return readValue<std::string>(path, defVal);
 	}
 
-	unsigned long long get_file_size()
+	int			readInt(const char* szSec, const char* szKey, int defVal = 0)
 	{
-		boost::interprocess::offset_t size=0;
-		if(!get_file_size(size))
-			size=0;
-		return size;
+		static char path[MAX_KEY_LENGTH] = { 0 };
+		sprintf(path, "%s.%s", szSec, szKey);
+		return readValue<int>(path, defVal);
 	}
 
-	static unsigned long long get_file_size(const char *name)
+	uint32_t	readUInt(const char* szSec, const char* szKey, uint32_t defVal = 0)
 	{
-		BoostFile bf;
-		if (!bf.open_existing_file(name))
+		static char path[MAX_KEY_LENGTH] = { 0 };
+		sprintf(path, "%s.%s", szSec, szKey);
+		return readValue<uint32_t>(path, defVal);
+	}
+
+	bool		readBool(const char* szSec, const char* szKey, bool defVal = false)
+	{
+		static char path[MAX_KEY_LENGTH] = { 0 };
+		sprintf(path, "%s.%s", szSec, szKey);
+		return readValue<bool>(path, defVal);
+	}
+
+	double		readDouble(const char* szSec, const char* szKey, double defVal = 0.0)
+	{
+		static char path[MAX_KEY_LENGTH] = { 0 };
+		sprintf(path, "%s.%s", szSec, szKey);
+		return readValue<double>(path, defVal);
+	}
+	// 读取父节点的键并保存到数组
+	int			readSections(FieldArray &aySection)
+	{
+		for (auto it = _root.begin(); it != _root.end(); it++)
+		{
+			aySection.emplace_back(it->first.data());
+		}
+
+		return _root.size();
+	}
+	// 读取子节点的键并保存到数组
+	int			readSecKeyArray(const char* szSec, FieldArray &ayKey)
+	{
+		try
+		{
+			const boost::property_tree::ptree& _sec = _root.get_child(szSec);
+			for (auto it = _sec.begin(); it != _sec.end(); it++)
+			{
+				ayKey.emplace_back(it->first.data());
+			}
+
+			return _sec.size();
+		}
+		catch (...)
+		{
 			return 0;
+		}
+		
+	}
+	// 读取节点键值分别保存到数组
+	int			readSecKeyValArray(const char* szSec, FieldArray &ayKey, FieldArray &ayVal)
+	{
+		try
+		{
+			const boost::property_tree::ptree& _sec = _root.get_child(szSec);
+			for (auto it = _sec.begin(); it != _sec.end(); it++)
+			{
+				ayKey.emplace_back(it->first.data());
+				ayVal.emplace_back(it->second.data());
+			}
 
-		auto ret = bf.get_file_size();
-		bf.close_file();
-		return ret;
-	}
-	// 设置文件指针
-	bool set_file_pointer(boost::interprocess::offset_t off, boost::interprocess::file_pos_t pos)
-	{
-		return boost::interprocess::ipcdetail::set_file_pointer(_handle,off,pos);
-	}
-	// 文件光标操作
-	bool seek_to_begin(int offsize=0)
-	{
-		return set_file_pointer(offsize,boost::interprocess::file_begin);
-	}
-
-	bool seek_current(int offsize=0)
-	{
-		return set_file_pointer(offsize,boost::interprocess::file_current);
-	}
-
-	bool seek_to_end(int offsize=0)
-	{
-		return set_file_pointer(offsize,boost::interprocess::file_end);
-	}
-	// 获取文件指针
-	bool get_file_pointer(boost::interprocess::offset_t &off)
-	{
-		return boost::interprocess::ipcdetail::get_file_pointer(_handle,off);
-	}
-
-	unsigned long long get_file_pointer()
-	{
-		boost::interprocess::offset_t off=0;
-		if(!get_file_pointer(off))
+			return _sec.size();
+		}
+		catch (...)
+		{
 			return 0;
-		return off;
+		}
 	}
-	// 文件读写
-	bool write_file(const void *data, std::size_t numdata)
+	// 写入值模板
+	template<class T>
+	void		writeValue(const char* szPath, T val)
 	{
-		return boost::interprocess::ipcdetail::write_file(_handle,data,numdata);
+		_root.put<T>(szPath, val);
 	}
-
-	bool write_file(const std::string& data)
+	// 写入不同类型的值
+	void		writeString(const char* szSec, const char* szKey, const char* val)
 	{
-		return boost::interprocess::ipcdetail::write_file(_handle, data.data(), data.size());
-	}
-
-	bool read_file(void *data, std::size_t numdata)
-	{
-		unsigned long readbytes = 0;
-#ifdef _WIN32
-		int ret = ReadFile(_handle, data, (DWORD)numdata, &readbytes, NULL);
-#else
-		readbytes = read(_handle, data, (std::size_t)numdata);
-#endif
-		return numdata == readbytes;
+		static char path[MAX_KEY_LENGTH] = { 0 };
+		sprintf(path, "%s.%s", szSec, szKey);
+		writeValue<std::string>(path, val);
 	}
 
-	int read_file_length(void *data, std::size_t numdata)
+	void		writeInt(const char* szSec, const char* szKey, int val)
 	{
-		unsigned long readbytes = 0;
-#ifdef _WIN32
-		int ret = ReadFile(_handle, data, (DWORD)numdata, &readbytes, NULL);
-#else
-		readbytes = read(_handle, data, (std::size_t)numdata);
-#endif
-		return readbytes;
+		static char path[MAX_KEY_LENGTH] = { 0 };
+		sprintf(path, "%s.%s", szSec, szKey);
+		writeValue<int>(path, val);
 	}
 
-private:
-	boost::interprocess::file_handle_t _handle;
+	void		writeUInt(const char* szSec, const char* szKey, uint32_t val)
+	{
+		static char path[MAX_KEY_LENGTH] = { 0 };
+		sprintf(path, "%s.%s", szSec, szKey);
+		writeValue<uint32_t>(path, val);
+	}
 
-public:
-	// 删除文件
-	static bool delete_file(const char *name)
+	void		writeBool(const char* szSec, const char* szKey, bool val)
 	{
-		return boost::interprocess::ipcdetail::delete_file(name);
+		static char path[MAX_KEY_LENGTH] = { 0 };
+		sprintf(path, "%s.%s", szSec, szKey);
+		writeValue<bool>(path, val);
 	}
-	// 读取文件内容
-	static bool read_file_contents(const char *filename,std::string &buffer)
-	{
-		BoostFile bf;
-		if(!bf.open_existing_file(filename,boost::interprocess::read_only))
-			return false;
-		unsigned int filesize=(unsigned int)bf.get_file_size();
-		if(filesize==0)
-			return false;
-		buffer.resize(filesize);
-		return bf.read_file((void *)buffer.c_str(),filesize);
-	}
-	// 将内容写入文件
-	static bool write_file_contents(const char *filename,const void *pdata,uint32_t datalen)
-	{
-		BoostFile bf;
-		if(!bf.create_new_file(filename))
-			return false;
-		return bf.write_file(pdata,datalen);
-	}
-	// 创建文件夹
-	static bool create_directory(const char *name)
-	{
-		if(exists(name))
-			return true;
 
-		return boost::filesystem::create_directory(boost::filesystem::path(name));
-	}
-	// 递归式创建文件夹
-	static bool create_directories(const char *name)
+	void		writeDouble(const char* szSec, const char* szKey, double val)
 	{
-		if(exists(name))
-			return true;
-
-		return boost::filesystem::create_directories(boost::filesystem::path(name));
-	}
-	// 判断文件是否存在
-	static bool exists(const char* name)
-	{
-		return boost::filesystem::exists(boost::filesystem::path(name));
+		static char path[MAX_KEY_LENGTH] = { 0 };
+		sprintf(path, "%s.%s", szSec, szKey);
+		writeValue<double>(path, val);
 	}
 };
-
-typedef boost::shared_ptr<BoostFile> BoostFilePtr;
 ```
