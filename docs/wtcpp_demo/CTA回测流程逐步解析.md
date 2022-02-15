@@ -1218,3 +1218,39 @@ void HisDataReplayer::run_by_tasks(bool bNeedDump /* = false */)
     }
 }
 ```
+
+### 回测撮合逻辑
+
+#### on_tick
+
+回测中的订单撮合主要在on_tick事件中执行，这里的on_tick事件不是指策略中的on_tick，而是指调度器CtaMocker中的on_tick，由handle_tick触发。主要完成以下工作
+
+1. 检查是否要信号要触发
+
+2. 检查条件单
+
+3. 调用策略的on_tick
+
+#### 信号函数
+
+当在策略中调用stra_enter_long/stra_enter_short/stra_exit_long/stra_exit_short 等函数时，会进行以下流程：
+
+1. 如果没有指定条件单价格，则视为动态下单，直接添加到信号列表中。
+
+2. 如果指定了条件单价格，则视为条件下单，根据信号方向生成条件单对象，记录目标价格以及触发规则
+
+    WCT_Equal,          //等于
+    WCT_Larger,         //大于
+    WCT_Smaller,        //小于
+    WCT_LargerOrEqual,  //大于等于
+    WCT_SmallerOrEqual  //小于等于
+
+3. 信号列表以及停止单列表，将会依次在on_tick事件中处理。
+
+#### 信号处理
+
+在on_tick中，首先处理信号列表，通过执行do_set_position函数，将当前持仓调整到信号期望的目标仓位。
+
+#### 信号生成
+
+除了在策略代码中，直接调用stra_enter_long/stra_enter_short/stra_exit_long/stra_exit_short进行动态下单直接添加到信号列表中外，在on_tick中对停止单进行检查，如果判断触发，生成信号并添加到信号列表中。这个信号会在下一轮on_tick中被执行。
