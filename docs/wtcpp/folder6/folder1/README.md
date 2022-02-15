@@ -1,3 +1,3 @@
-# CTA策略模板
+# WtBtCore
 
 source: `{{ page.path }}`

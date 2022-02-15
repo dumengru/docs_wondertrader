@@ -1,7 +1,7 @@
-# WTSUtils
+# WTSTools
 
 source: `{{ page.path }}`
 
 ```note
-WTSUtils 文件夹
+WTSTools 文件夹
 ```

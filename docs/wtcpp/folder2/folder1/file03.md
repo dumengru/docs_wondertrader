@@ -1,230 +1,296 @@
-# BoostFile.hpp
+# WTSStruct.h
 
 source: `{{ page.path }}`
 
 ```cpp
 /*!
- * \file BoostFile.hpp
+ * \file WTSStruct.h
  * \project	WonderTrader
  *
  * \author Wesley
  * \date 2020/03/30
  * 
- * \brief boost库文件操作的辅助对象
+ * \brief Wt基础结构体定义
  */
 #pragma once
-#include <boost/version.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/interprocess/detail/os_file_functions.hpp>
-#include <string>
+#include <memory>
+#include <stdint.h>
+#include <string.h>
+#include "WTSTypes.h"
 
-#ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#else
-#include <unistd.h>
-#endif
+#pragma warning(disable:4200)
 
+NS_WTP_BEGIN
 
-class BoostFile
+#pragma pack(push, 1)
+
+// 旧Bar结构体
+struct WTSBarStructOld
 {
 public:
-	BoostFile()
+	WTSBarStructOld()
 	{
-		_handle=boost::interprocess::ipcdetail::invalid_file();		// 文件句柄
-	}
-	~BoostFile()
-	{
-		close_file();
-	}
-	// 创建新的文件对象
-	bool create_new_file(const char *name, boost::interprocess::mode_t mode = boost::interprocess::read_write, bool temporary = false)
-	{
-		_handle=boost::interprocess::ipcdetail::create_or_open_file(name,mode,boost::interprocess::permissions(),temporary);
-
-		if (valid())
-			return truncate_file(0);
-		return false;
-	}
-	// 创建或打开文件
-	bool create_or_open_file(const char *name, boost::interprocess::mode_t mode = boost::interprocess::read_write, bool temporary = false)
-	{
-		_handle=boost::interprocess::ipcdetail::create_or_open_file(name,mode,boost::interprocess::permissions(),temporary);
-
-		return valid();
-	}
-	// 打开已存在文件
-	bool open_existing_file(const char *name, boost::interprocess::mode_t mode = boost::interprocess::read_write, bool temporary = false)
-	{
-		_handle=boost::interprocess::ipcdetail::open_existing_file(name,mode,temporary);
-		return valid();
-	}
-	// 判断是否是无效文件
-	bool is_invalid_file()
-	{  
-		return _handle==boost::interprocess::ipcdetail::invalid_file();  
-	}
-	// 判断是否是有效文件
-	bool valid()
-	{
-		return _handle!=boost::interprocess::ipcdetail::invalid_file();
-	}
-	// 关闭文件
-	void close_file()
-	{
-		if(!is_invalid_file())
-		{
-			boost::interprocess::ipcdetail::close_file(_handle);
-			_handle=boost::interprocess::ipcdetail::invalid_file();
-		}
-	}
-	// 删除文件
-	bool truncate_file (std::size_t size)
-	{
-		return boost::interprocess::ipcdetail::truncate_file(_handle,size);
-	}
-	// 获取文件大小
-	bool get_file_size(boost::interprocess::offset_t &size)
-	{
-		return boost::interprocess::ipcdetail::get_file_size(_handle,size);
+		memset(this, 0, sizeof(WTSBarStructOld));
 	}
 
-	unsigned long long get_file_size()
-	{
-		boost::interprocess::offset_t size=0;
-		if(!get_file_size(size))
-			size=0;
-		return size;
-	}
+	uint32_t	date;
+	uint32_t	time;
+	double		open;		//开
+	double		high;		//高
+	double		low;		//低
+	double		close;		//收
+	double		settle;		//结算
+	double		money;		//成交金额
 
-	static unsigned long long get_file_size(const char *name)
-	{
-		BoostFile bf;
-		if (!bf.open_existing_file(name))
-			return 0;
+	uint32_t	vol;		//成交量
+	uint32_t	hold;		//总持
+	int32_t		add;		//增仓
+};
 
-		auto ret = bf.get_file_size();
-		bf.close_file();
-		return ret;
-	}
-	// 设置文件指针
-	bool set_file_pointer(boost::interprocess::offset_t off, boost::interprocess::file_pos_t pos)
-	{
-		return boost::interprocess::ipcdetail::set_file_pointer(_handle,off,pos);
-	}
-	// 文件光标操作
-	bool seek_to_begin(int offsize=0)
-	{
-		return set_file_pointer(offsize,boost::interprocess::file_begin);
-	}
+// 旧Tick结构体
+struct WTSTickStructOld
+{
+	char		exchg[10];
+	char		code[MAX_INSTRUMENT_LENGTH];
 
-	bool seek_current(int offsize=0)
-	{
-		return set_file_pointer(offsize,boost::interprocess::file_current);
-	}
+	double		price;				//最新价
+	double		open;				//开盘价
+	double		high;				//最高价
+	double		low;				//最低价
+	double		settle_price;		//结算价
 
-	bool seek_to_end(int offsize=0)
-	{
-		return set_file_pointer(offsize,boost::interprocess::file_end);
-	}
-	// 获取文件指针
-	bool get_file_pointer(boost::interprocess::offset_t &off)
-	{
-		return boost::interprocess::ipcdetail::get_file_pointer(_handle,off);
-	}
+	double		upper_limit;		//涨停价
+	double		lower_limit;		//跌停价
 
-	unsigned long long get_file_pointer()
-	{
-		boost::interprocess::offset_t off=0;
-		if(!get_file_pointer(off))
-			return 0;
-		return off;
-	}
-	// 文件读写
-	bool write_file(const void *data, std::size_t numdata)
-	{
-		return boost::interprocess::ipcdetail::write_file(_handle,data,numdata);
-	}
+	uint32_t	total_volume;		//总成交量
+	uint32_t	volume;				//成交量
+	double		total_turnover;		//总成交额
+	double		turn_over;			//成交额
+	uint32_t	open_interest;		//总持
+	int32_t		diff_interest;		//增仓
 
-	bool write_file(const std::string& data)
-	{
-		return boost::interprocess::ipcdetail::write_file(_handle, data.data(), data.size());
-	}
+	uint32_t	trading_date;		//交易日,如20140327
+	uint32_t	action_date;		//自然日期,如20140327
+	uint32_t	action_time;		//发生时间,精确到毫秒,如105932000
 
-	bool read_file(void *data, std::size_t numdata)
-	{
-		unsigned long readbytes = 0;
-#ifdef _WIN32
-		int ret = ReadFile(_handle, data, (DWORD)numdata, &readbytes, NULL);
-#else
-		readbytes = read(_handle, data, (std::size_t)numdata);
-#endif
-		return numdata == readbytes;
-	}
+	double		pre_close;			//昨收价
+	double		pre_settle;			//昨结算
+	int32_t		pre_interest;		//上日总持
 
-	int read_file_length(void *data, std::size_t numdata)
+	double		bid_prices[10];		//委买价格
+	double		ask_prices[10];		//委卖价格
+	uint32_t	bid_qty[10];		//委买量
+	uint32_t	ask_qty[10];		//委卖量
+	WTSTickStructOld()
 	{
-		unsigned long readbytes = 0;
-#ifdef _WIN32
-		int ret = ReadFile(_handle, data, (DWORD)numdata, &readbytes, NULL);
-#else
-		readbytes = read(_handle, data, (std::size_t)numdata);
-#endif
-		return readbytes;
-	}
-
-private:
-	boost::interprocess::file_handle_t _handle;
-
-public:
-	// 删除文件
-	static bool delete_file(const char *name)
-	{
-		return boost::interprocess::ipcdetail::delete_file(name);
-	}
-	// 读取文件内容
-	static bool read_file_contents(const char *filename,std::string &buffer)
-	{
-		BoostFile bf;
-		if(!bf.open_existing_file(filename,boost::interprocess::read_only))
-			return false;
-		unsigned int filesize=(unsigned int)bf.get_file_size();
-		if(filesize==0)
-			return false;
-		buffer.resize(filesize);
-		return bf.read_file((void *)buffer.c_str(),filesize);
-	}
-	// 将内容写入文件
-	static bool write_file_contents(const char *filename,const void *pdata,uint32_t datalen)
-	{
-		BoostFile bf;
-		if(!bf.create_new_file(filename))
-			return false;
-		return bf.write_file(pdata,datalen);
-	}
-	// 创建文件夹
-	static bool create_directory(const char *name)
-	{
-		if(exists(name))
-			return true;
-
-		return boost::filesystem::create_directory(boost::filesystem::path(name));
-	}
-	// 递归式创建文件夹
-	static bool create_directories(const char *name)
-	{
-		if(exists(name))
-			return true;
-
-		return boost::filesystem::create_directories(boost::filesystem::path(name));
-	}
-	// 判断文件是否存在
-	static bool exists(const char* name)
-	{
-		return boost::filesystem::exists(boost::filesystem::path(name));
+		memset(this, 0, sizeof(WTSTickStructOld));
 	}
 };
 
-typedef boost::shared_ptr<BoostFile> BoostFilePtr;
+#pragma pack(pop)
+
+
+//By Wesley @ 2021.12.31
+//新的结构体，全部改成8字节对齐的方式
+#pragma pack(push, 8)
+
+// 新Bar结构体
+struct WTSBarStruct
+{
+public:
+	WTSBarStruct()
+	{
+		memset(this, 0, sizeof(WTSBarStruct));
+	}
+
+	uint32_t	date;		//日期
+	uint32_t	reserve_;	//占位符
+	uint64_t	time;		//时间
+	double		open;		//开
+	double		high;		//高
+	double		low;		//低
+	double		close;		//收
+	double		settle;		//结算
+	double		money;		//成交金额
+
+	double		vol;	//成交量
+	double		hold;	//总持
+	double		add;	//增仓
+
+	//By Wesley @ 2021.12.30
+	//直接复制老结构体
+	WTSBarStruct& operator = (const WTSBarStructOld& bar)
+	{
+		date = bar.date;
+		time = bar.time;
+
+		open = bar.open;
+		high = bar.high;
+		low = bar.low;
+		close = bar.close;
+		settle = bar.settle;
+		money = bar.money;
+
+		vol = bar.vol;
+		hold = bar.hold;
+		add = bar.add;
+
+		return *this;
+	}
+};
+
+// 新Tick结构体
+struct WTSTickStruct
+{
+	char		exchg[MAX_EXCHANGE_LENGTH];
+	char		code[MAX_INSTRUMENT_LENGTH];
+
+	double		price;				//最新价
+	double		open;				//开盘价
+	double		high;				//最高价
+	double		low;				//最低价
+	double		settle_price;		//结算价
+
+	double		upper_limit;		//涨停价
+	double		lower_limit;		//跌停价
+
+	double		total_volume;		//总成交量
+	double		volume;				//成交量
+	double		total_turnover;		//总成交额
+	double		turn_over;			//成交额
+	double		open_interest;		//总持
+	double		diff_interest;		//增仓
+
+	uint32_t	trading_date;		//交易日,如20140327
+	uint32_t	action_date;		//自然日期,如20140327
+	uint32_t	action_time;		//发生时间,精确到毫秒,如105932000
+	uint32_t	reserve_;			//占位符
+
+	double		pre_close;			//昨收价
+	double		pre_settle;			//昨结算
+	double		pre_interest;		//上日总持
+
+	double		bid_prices[10];		//委买价格
+	double		ask_prices[10];		//委卖价格
+	double		bid_qty[10];		//委买量
+	double		ask_qty[10];		//委卖量
+	WTSTickStruct()
+	{
+		memset(this, 0, sizeof(WTSTickStruct));
+	}
+
+	WTSTickStruct& operator = (const WTSTickStructOld& tick)
+	{
+		strncpy(exchg, tick.exchg, MAX_EXCHANGE_LENGTH);
+		strncpy(code, tick.code, MAX_INSTRUMENT_LENGTH);
+
+		price = tick.price;
+		open = tick.open;
+		high = tick.high;
+		low = tick.low;
+		settle_price = tick.settle_price;
+
+		upper_limit = tick.upper_limit;
+		lower_limit = tick.lower_limit;
+
+		total_volume = tick.total_volume;
+		total_turnover = tick.total_turnover;
+		open_interest = tick.open_interest;
+		volume = tick.volume;
+		turn_over = tick.turn_over;
+		diff_interest = tick.diff_interest;
+
+		trading_date = tick.trading_date;
+		action_date = tick.action_date;
+		action_time = tick.action_time;
+
+		pre_close = tick.pre_close;
+		pre_interest = tick.pre_interest;
+		pre_settle = tick.pre_settle;
+
+		for(int i = 0; i < 10; i++)
+		{
+			bid_prices[i] = tick.bid_prices[i];
+			bid_qty[i] = tick.bid_qty[i];
+			ask_prices[i] = tick.ask_prices[i];
+			ask_qty[i] = tick.ask_qty[i];
+		}
+
+		return *this;
+	}
+};
+
+// 委托队列结构
+struct WTSOrdQueStruct
+{
+	char		exchg[MAX_EXCHANGE_LENGTH];
+	char		code[MAX_INSTRUMENT_LENGTH];
+
+	uint32_t	trading_date;		//交易日,如20140327
+	uint32_t	action_date;		//自然日期,如20140327
+	uint32_t	action_time;		//发生时间,精确到毫秒,如105932000
+	WTSBSDirectType	side;			//委托方向
+
+	double		price;				//委托价格
+	uint32_t	order_items;		//订单个数
+	uint32_t	qsize;				//队列长度
+	uint32_t	volumes[50];		//委托明细
+
+	WTSOrdQueStruct()
+	{
+		memset(this, 0, sizeof(WTSOrdQueStruct));
+	}
+};
+
+// 委托订单结构体
+struct WTSOrdDtlStruct
+{
+	char		exchg[MAX_EXCHANGE_LENGTH];
+	char		code[MAX_INSTRUMENT_LENGTH];
+
+	uint32_t		trading_date;		//交易日,如20140327
+	uint32_t		action_date;		//自然日期,如20140327
+	uint32_t		action_time;		//发生时间,精确到毫秒,如105932000
+
+	uint64_t		index;			//委托编号(从1开始,递增1)
+	double			price;			//委托价格
+	uint64_t		volume;			//委托数量
+	WTSBSDirectType		side;		//委托方向
+	WTSOrdDetailType	otype;		//委托类型
+
+	WTSOrdDtlStruct()
+	{
+		memset(this, 0, sizeof(WTSOrdDtlStruct));
+	}
+};
+
+// 成交订单结构体
+struct WTSTransStruct
+{
+	char		exchg[MAX_EXCHANGE_LENGTH];
+	char		code[MAX_INSTRUMENT_LENGTH];
+
+	uint32_t	trading_date;		//交易日,如20140327
+	uint32_t	action_date;		//自然日期,如20140327
+	uint32_t	action_time;		//发生时间,精确到毫秒,如105932000
+	uint32_t	index;			//成交编号(从1开始,递增1)
+
+	WTSTransType	ttype;			//成交类型: 'C', 0
+	WTSBSDirectType	side;			//BS标志
+
+	double			price;			//成交价格
+	uint32_t		volume;			//成交数量
+	int32_t			askorder;		//叫卖序号
+	int32_t			bidorder;		//叫买序号
+
+	WTSTransStruct()
+	{
+		memset(this, 0, sizeof(WTSTransStruct));
+	}
+};
+
+#pragma pack(pop)
+
+NS_WTP_END
+
 ```

@@ -1,7 +1,7 @@
-# WtCore
+# WTSCmpHelper.hpp
 
 source: `{{ page.path }}`
 
-```note
+```cpp
 
 ```

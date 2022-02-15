@@ -1,86 +1,94 @@
-# CTA策略工厂
+# WtHelper.h
 
 source: `{{ page.path }}`
 
-## WtCtaStraFact.h
-
-### WtStraFact
-
-实现了CTA策略接口
-
 ```cpp
-class WtStraFact : public ICtaStrategyFact
+/*!
+ * \file WtHelper.h
+ * \project	WonderTrader
+ *
+ * \author Wesley
+ * \date 2020/03/30
+ * 
+ * \brief 
+ */
+#pragma once
+#include <string>
+#include <stdint.h>
+
+// 处理工作路径和输出路径
+class WtHelper
 {
 public:
-	WtStraFact();
-	virtual ~WtStraFact();
+	static std::string getCWD();
 
-public:
-	virtual const char* getName() override;
-	virtual CtaStrategy* createStrategy(const char* name, const char* id) override;
-	virtual void enumStrategy(FuncEnumStrategyCallback cb) override;
-	virtual bool deleteStrategy(CtaStrategy* stra) override;	
+	static const char* getOutputDir();
+
+	static const std::string& getInstDir() { return _inst_dir; }
+	static void setInstDir(const char* inst_dir) { _inst_dir = inst_dir; }
+	static void setOutputDir(const char* out_dir);
+
+private:
+	static std::string	_inst_dir;	//实例所在目录
+	static std::string	_out_dir;
 };
 ```
 
-### WtCtaStraFact.cpp
+## WtHelper.cpp
 
 ```cpp
-const char* FACT_NAME = "WtCtaStraFact";
+/*!
+ * \file WtHelper.cpp
+ * \project	WonderTrader
+ *
+ * \author Wesley
+ * \date 2020/03/30
+ * 
+ * \brief 
+ */
+#include "WtHelper.h"
 
-extern "C"
+#include "../Share/StrUtil.hpp"
+#include <boost/filesystem.hpp>
+
+#ifdef _MSC_VER
+#include <direct.h>
+#else	//UNIX
+#include <unistd.h>
+#endif
+
+std::string WtHelper::_inst_dir;
+std::string WtHelper::_out_dir = "./outputs_bt/";
+
+// 获取当前工作绝对路径
+std::string WtHelper::getCWD()
 {
-	EXPORT_FLAG ICtaStrategyFact* createStrategyFact()
+	static std::string _cwd;
+	if(_cwd.empty())
 	{
-		ICtaStrategyFact* fact = new WtStraFact();
-		return fact;
-	}
-	EXPORT_FLAG void deleteStrategyFact(ICtaStrategyFact* fact)
-	{
-		if (fact != NULL)
-			delete fact;
-	}
-};
-
-WtStraFact::WtStraFact()
-{}
-
-WtStraFact::~WtStraFact()
-{}
-
-// 创建策略对象(传入策略名称, 和配置文件中的"name"一致)
-CtaStrategy* WtStraFact::createStrategy(const char* name, const char* id)
-{
-	if (strcmp(name, "DualThrust") == 0)
-		return new WtStraDualThrust(id);
-
-	return NULL;
+		char   buffer[255];
+#ifdef _MSC_VER
+		_getcwd(buffer, 255);
+#else	//UNIX
+		getcwd(buffer, 255);
+#endif
+		_cwd = buffer;
+		_cwd = StrUtil::standardisePath(_cwd);
+	}	
+	return _cwd;
 }
 
-// 删除策略对象
-bool WtStraFact::deleteStrategy(CtaStrategy* stra)
+// 设置输出路径
+void WtHelper::setOutputDir(const char* out_dir)
 {
-	if (stra == NULL)
-		return true;
-
-	if (strcmp(stra->getFactName(), FACT_NAME) != 0)
-		return false;
-
-	delete stra;
-	return true;
+	_out_dir = StrUtil::standardisePath(std::string(out_dir));
 }
 
-// 枚举策略(有回调函数)
-void WtStraFact::enumStrategy(FuncEnumStrategyCallback cb)
+// 获取输出路径
+const char* WtHelper::getOutputDir()
 {
-	cb(FACT_NAME, "DualThrust", false);
-	cb(FACT_NAME, "PairTradingFci", false);
-	cb(FACT_NAME, "CtaXPA", true);
-}
-
-// 获取策略名称
-const char* WtStraFact::getName()
-{
-	return FACT_NAME;
+	if (!boost::filesystem::exists(_out_dir.c_str()))
+        boost::filesystem::create_directories(_out_dir.c_str());
+	return _out_dir.c_str();
 }
 ```

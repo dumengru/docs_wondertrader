@@ -1,3 +1,3 @@
-# 定义接口类
+# NULL
 
 source: `{{ page.path }}`

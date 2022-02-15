@@ -1,7 +1,7 @@
-# WtCore
+# SignalHook.hpp
 
 source: `{{ page.path }}`
 
-```note
+```cpp
 
 ```

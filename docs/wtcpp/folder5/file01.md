@@ -1,7 +1,7 @@
-# WtCore
+# WTSCfgLoader.h
 
 source: `{{ page.path }}`
 
-```note
+```cpp
 
 ```
