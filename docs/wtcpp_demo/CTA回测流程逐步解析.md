@@ -748,6 +748,169 @@ void HisDataReplayer::checkUnbars()
 
 ### 主K回放(run_by_bars)
 
+在replayer.run()中，如果订阅了主K线，则按照主K线进行回放，执行run_by_bars。
+
+run_by_bars位于HisDataReplayer.cpp中，位于WtBtCore工程下，下面将逐行解析run_by_bars的回测逻辑。
+
+run_by_bars
+
+```cpp
+void HisDataReplayer::run_by_bars(bool bNeedDump /* = false */)
+{
+    // 获取当前纳秒级别的时间戳
+    int64_t now = TimeUtils::getLocalTimeNano();
+    
+    // 从缓存中加载主K的数据
+    BarsList& barList = _bars_cache[_main_key];
+    // 获取交易时间信息
+    WTSSessionInfo* sInfo = get_session_info(barList._code.c_str(), true);
+    // 解析品种的代码，如CFFEX.IC.HOT -> CFFEX.IC
+    std::string commId = CodeHelper::stdCodeToStdCommID(barList._code.c_str());
+
+    // 计算开始和结束bar的索引号
+    uint32_t sIdx = locate_barindex(_main_key, _begin_time, false);
+    uint32_t eIdx = locate_barindex(_main_key, _end_time, true);
+
+    // 获取全部bar的数目
+    uint32_t total_barcnt = eIdx - sIdx + 1;
+    // 初始化已回测过的bar数
+    uint32_t replayed_barcnt = 0;
+    // 输出回测概况
+    notify_state(barList._code.c_str(), barList._period, barList._times, _begin_time, _end_time, 0);
+
+    // 本地记录回测概况
+    if (bNeedDump)
+        dump_btstate(barList._code.c_str(), barList._period, barList._times, _begin_time, _end_time, 100.0, TimeUtils::getLocalTimeNano() - now);
+
+    WTSLogger::info_f("Start to replay back data from {}...", _begin_time);
+
+    // 开始回测循环
+    for (; !_terminated;)
+    {
+        // 判断bar的频率是否是日线，从而采取不同的处理方法
+        bool isDay = barList._period == KP_DAY;
+        if (barList._cursor != UINT_MAX)
+        {
+            // 计算下一个bar的时间
+            uint64_t nextBarTime = 0;
+            if (isDay)
+                // 如果是日线数据，使用当前日期的收盘时间作为下一个bar的时间
+                nextBarTime = (uint64_t)barList._bars[barList._cursor].date * 10000 + sInfo->getCloseTime();
+            else
+            {
+                // 非日线时间，使用当前时间
+                nextBarTime = (uint64_t)barList._bars[barList._cursor].time;
+                // 由于bar的时间是自1990年为起点，所以要加上起点时间转换为当前时间
+                nextBarTime += 199000000000;
+            }
+
+            // 检查下一个bar的时间是否超过回测的结束时间
+            if (nextBarTime > _end_time)
+            {
+                WTSLogger::info_f("{} is beyond ending time {},replaying done", nextBarTime, _end_time);
+                break;
+            }
+
+            // 计算日期和时间
+            uint32_t nextDate = (uint32_t)(nextBarTime / 10000);
+            uint32_t nextTime = (uint32_t)(nextBarTime % 10000);
+
+            //By Wesley @ 2022.01.10
+            //如果和收盘时间一样，进行这个判断
+            //主要针对7*24小时的品种，其他的品种不需要
+            uint32_t nextTDate = _opened_tdate;
+            if(isDay || (!isDay && sInfo->offsetTime(nextTime, false) != sInfo->getCloseTime(true)))
+            {
+                nextTDate = _bd_mgr.calcTradingDate(commId.c_str(), nextDate, nextTime, false);
+                // 判断是否到达了新的交易日
+                if (_opened_tdate != nextTDate)
+                {
+                    WTSLogger::debug_f("Tradingday {} begins", nextTDate);
+                    _listener->handle_session_begin(nextTDate);
+                    _opened_tdate = nextTDate;
+                    _cur_tdate = nextTDate;
+                }
+            }
+
+            uint64_t curBarTime = (uint64_t)_cur_date * 10000 + _cur_time;
+            if (_tick_enabled)
+            {
+                //如果开启了tick回放,则直接回放tick数据
+                //如果tick回放失败，说明tick数据不存在，则需要模拟tick
+                _tick_simulated = !replayHftDatas(curBarTime, nextBarTime);
+            }
+
+            _cur_date = nextDate;
+            _cur_time = nextTime;
+            _cur_secs = 0;
+            
+            // 判断当前交易日是否结束
+            bool isEndTDate = (sInfo->offsetTime(_cur_time, false) >= sInfo->getCloseTime(true));
+
+            if (!_tick_enabled)
+            {
+                // 检查是否未订阅数据，如果未订阅，则会自动订阅一个1分钟bar作为unbar来进行撮合
+                checkUnbars();
+                // 使用unbar数据进行回放撮合
+                replayUnbars(curBarTime, nextBarTime, (isDay || isEndTDate) ? nextTDate : 0);
+            }
+
+            // 检查K线闭合
+            onMinuteEnd(nextDate, nextTime, (isDay || isEndTDate) ? nextTDate : 0, _tick_simulated);
+
+            replayed_barcnt += 1;
+
+            // 若交易日结束，则触发交易日结束事件
+            if (isEndTDate && _closed_tdate != _cur_tdate)
+            {
+                WTSLogger::debug_f("Tradingday {} ends", _cur_tdate);
+                _listener->handle_session_end(_cur_tdate);
+                _closed_tdate = _cur_tdate;
+                _day_cache.clear();
+            }
+
+            // 记录回测状态
+            notify_state(barList._code.c_str(), barList._period, barList._times, _begin_time, _end_time, replayed_barcnt*100.0 / total_barcnt);
+            
+            // 所有数据都回测完成，结束回测
+            if (barList._cursor >= barList._bars.size())
+            {
+                WTSLogger::log_raw(LL_INFO, "All back data replayed, replaying done");
+                break;
+            }
+        }
+        else
+        {
+            WTSLogger::log_raw(LL_ERROR, "No back data initialized, replaying canceled");
+            break;
+        }
+    }
+
+    if (_terminated)
+        WTSLogger::debug("Replaying by bars terminated forcely");
+
+    // 回测结束
+    notify_state(barList._code.c_str(), barList._period, barList._times, _begin_time, _end_time, 100);
+    if (_notifier)
+        _notifier->notifyEvent("BT_END");
+
+    // 最后检查是否触发交易日结束事件
+    if (_closed_tdate != _cur_tdate)
+    {
+        WTSLogger::debug_f("Tradingday {} ends", _cur_tdate);
+        _listener->handle_session_end(_cur_tdate);
+    }
+
+     // 检查是否需要本地化
+    if (bNeedDump)
+    {
+        dump_btstate(barList._code.c_str(), barList._period, barList._times, _begin_time, _end_time, 100.0, TimeUtils::getLocalTimeNano() - now);
+    }
+
+    // 触发回测结束事件
+    _listener->handle_replay_done();
+}
+```
 
 ### Tick回放(run_by_ticks)
 
