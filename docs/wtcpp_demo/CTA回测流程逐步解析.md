@@ -914,5 +914,52 @@ void HisDataReplayer::run_by_bars(bool bNeedDump /* = false */)
 
 ### Tick回放(run_by_ticks)
 
+如果没有订阅K线，且tick回测是打开的，则按照每日的tick进行回放
+
+run_by_ticks位于HisDataReplayer.cpp中，位于WtBtCore工程下，run_by_ticks较run_by_bars简单，下面将逐行解析run_by_ticks的回测逻辑。
+
+run_by_ticks
+
+```cpp
+
+void HisDataReplayer::run_by_ticks(bool bNeedDump /* = false */)
+{
+    //如果没有订阅K线，且tick回测是打开的，则按照每日的tick进行回放
+    // 计算结束的日期和时间
+    uint32_t edt = (uint32_t)(_end_time / 10000);
+    uint32_t etime = (uint32_t)(_end_time % 10000);
+    // 计算当前交易日
+    uint64_t end_tdate = _bd_mgr.calcTradingDate(DEFAULT_SESSIONID, edt, etime, true);
+
+    // 开始回测循环
+    while (_cur_tdate <= end_tdate && !_terminated)
+    {
+        // 加载当前交易日的所有tick数据
+        if (checkAllTicks(_cur_tdate))
+        {
+            WTSLogger::info_f("Start to replay tick data of {}...", _cur_tdate);
+            // 触发交易日开始事件
+            _listener->handle_session_begin(_cur_tdate);
+            // 回放该交易日的tick
+            replayHftDatasByDay(_cur_tdate);
+            // 触发交易日结束事件
+            _listener->handle_session_end(_cur_tdate);
+        }
+        
+        // 获取下一个交易日
+        _cur_tdate = TimeUtils::getNextDate(_cur_tdate);
+    }
+
+    // 回测结束
+    if (_terminated)
+        WTSLogger::debug("Replaying by ticks terminated forcely");
+
+    WTSLogger::log_raw(LL_INFO, "All back data replayed, replaying done");
+    _listener->handle_replay_done();
+    if (_notifier)
+        _notifier->notifyEvent("BT_END");
+}
+```
 
 ### 时间调度(run_by_tasks)
+
