@@ -20,7 +20,7 @@ source: `{{ page.path }}`
 
 config.json 大概长这样
 
-```json
+```yaml
 {
     "replayer":{    // 回放器配置，包块数据格式、存放路径、交易费用等
         "mode":"csv",    // 获取数据的模式，如csv，bin等
@@ -61,7 +61,7 @@ config.json 大概长这样
 
 logcfg.json 大概长这样
 
-```json
+```yaml
 {
     "root":{    // 根日志对象的配置，通常是框架信息
         "level":"debug",    // 日志等级
