@@ -121,6 +121,10 @@ logcfg.json 大概长这样
 
 ### 编译运行程序（WtBtRunner工程）
 
+将WtBtRunner工程设置为启动项目，并将项目属性-配置属性-调试-工作目录设置为$(OutDir)
+
+![project_setting.png](/docs/wtcpp_demo/folder1/pic/project_setting.png)
+
 WtBtRunner.cpp
 
 ```cpp
