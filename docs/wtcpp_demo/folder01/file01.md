@@ -8,92 +8,71 @@ source: `{{ page.path }}`
 
 ### 1. 配置文件
 
-- logcfg.json 
-- config.json
-- storage
-- common目录
-  - sessions.json",
-  - commodities.json",
-  - contracts.json",
-  - holidays.json",
+- logcfgbt.yaml 
+- configbt.yaml
+- storage数据目录
+- common配置目录
+  - sessions.json"
+  - commodities.json"
+  - contracts.json"
+  - holidays.json"
   - hots.json"
 
-config.json 大概长这样
+configbt.yaml 大概长这样
 
-```json
-{
-    "replayer":{    // 回放器配置，包块数据格式、存放路径、交易费用等
-        "mode":"csv",    // 获取数据的模式，如csv，bin等
-        "path":"./storage/",    // 数据存放的路径
-        "stime":201905010900,    // 回测开始时间
-        "etime":201910011500,    // 回测结束时间
-        "basefiles":{            //common下的配置文件路径，(ToDo:每个文件的意义单独展开介绍)   
-            "session":"./common/sessions.json",
-            "commodity":"./common/commodities.json",
-            "contract":"./common/contracts.json",
-            "holiday":"./common/holidays.json",
-            "hot":"./common/hots.json"
-        },
-        "fees":"./common/fees.json"
-    },
-    "env":{    // 环境设置，与交易品种和撮合有关
-        "mocker":"cta",    // 模式
-        "slippage": 1      // 滑点
-    },
-    "cta":{    // 策略工厂配置
-        "module":"WtCtaStraFact.dll",    // 策略生成器模块名
-        "strategy":{    // 策略配置
-            "id": "dt_if",    // 策略id
-            "name": "DualThrust",    // 策略名
-            "params": {    // 策略参数
-                "code": "CFFEX.IF.HOT",
-                "count": 50,
-                "period": "m5",
-                "days": 30,
-                "k1": 0.6,
-                "k2": 0.6,
-                "stock":false
-            }
-        }
-    }
-}
+```yaml
+replayer:                   # 回放器配置，包块数据格式、存放路径、交易费用等
+    mode: csv               # 获取数据的模式，如csv，bin等
+    path: ./storage/        # 数据存放的路径
+    stime: 201905010900     # 回测开始时间
+    etime: 201910011500     # 回测结束时间
+    basefiles:              # common下的配置文件路径，(ToDo:每个文件的意义单独展开介绍)   
+        session: ./common/sessions.json
+        commodity: ./common/commodities.json
+        contract: ./common/contracts.json
+        holiday: ./common/holidays.json
+        hot: ./common/hots.json
+    fees: ./common/fees.json
+env:                # 环境设置，与交易品种和撮合有关
+    mocker: cta     # 模式
+    slippage: 1     # 滑点
+cta:                # 策略工厂配置
+    module: WtCtaStraFact.dll       # 策略生成器模块名
+    strategy:                       # 策略配置
+        id: dt_if                   # 策略id
+        name: DualThrust            # 策略名
+        params:                     # 策略参数
+            code: CFFEX.IF.HOT
+            count: 50
+            period: m5
+            days: 30
+            k1: 0.6
+            k2: 0.6
+            stock: false
 ```
 
-logcfg.json 大概长这样
+logcfg.yaml 大概长这样
 
-```json
-{
-    "root":{    // 根日志对象的配置，通常是框架信息
-        "level":"debug",    // 日志等级
-        "async":false,    //是否异步
-        "sinks":[     // 输出流的配置，即日志信息会被输出到哪些位置
-            {
-                "type":"basic_file_sink",    // 类型，基本的文件输出
-                "filename":"BtLogs/Runner.log",    // 日志文件保存位置
-                "pattern":"[%Y.%m.%d %H:%M:%S - %-5l] %v",    // 日志输出模板
-                "truncate":true    // 日志是否自动截断，截断可以避免日志文件过大
-            },
-            {
-                "type":"console_sink",  // 输出到控制台
-                "pattern":"[%m.%d %H:%M:%S - %^%-5l%$] %v"
-            }
-        ]
-    },
-    "dyn_pattern":{
-        "strategy":{
-            "level":"debug",
-            "async":false,
-            "sinks":[
-                {
-                    "type":"basic_file_sink",
-                    "filename":"BtLogs/Strategy_%s.log",
-                    "pattern":"[%Y.%m.%d %H:%M:%S - %-5l] %v",
-                    "truncate":false
-                }
-            ]
-        }
-    }
-}
+```yaml
+root:                   # 根日志对象的配置，通常是框架信息
+    level: debug        # 日志等级
+    async: false        #是否异步
+    sinks:              # 输出流的配置，即日志信息会被输出到哪些位置
+    -   type: basic_file_sink                           # 类型，基本的文件输出
+        filename: BtLogs/Runner.log                     # 日志文件保存位置
+        pattern: '[%Y.%m.%d %H: %M: %S - %-5l] %v'      # 日志输出模板
+        truncate: true                                  # 日志是否自动截断，截断可以避免日志文件过大
+        type: console_sink                              # 输出到控制台
+        pattern: '[%m.%d %H: %M: %S - %^%-5l%$] %v'
+dyn_pattern: 
+    strategy: 
+        level: debug
+        async: false
+        sinks: 
+        -   type: basic_file_sink
+            filename: BtLogs/Strategy_%s.log
+            pattern: '[%Y.%m.%d %H: %M: %S - %-5l] %v'
+            truncate: false
 ```
 
 ### 2. 数据文件
@@ -112,11 +91,11 @@ logcfg.json 大概长这样
 - src
   - x64/x86
     - Debug/Release
-      - common
       - WtBtRunner
+        - common
+        - storage
         - logcfg.json
         - config.json
-        - storage
         - WtCtaStraFact.dll
 
 ### 编译运行程序（WtBtRunner工程）
@@ -126,21 +105,23 @@ WtBtRunner.cpp
 ```cpp
 int main()
 {
-    // 1. 加载 logcfg.json
-    WTSLogger::init("logcfg.json");
+    // 1. 加载 logcfgbt.yaml
+    std::string filename = "logcfgbt.json";
+	if (!StdFile::exists(filename.c_str()))
+		filename = "logcfgbt.yaml";
+	WTSLogger::init(filename.c_str());
 
-    // 2. 读取配置文件并转为 WTSVariant 类型
-    std::string filename = "config.json";
-    std::string content;
-    StdFile::read_file_content(filename.c_str(), content);
-    rj::Document root;
-    if (root.Parse(content.c_str()).HasParseError())
-    {
-        WTSLogger::info("Parsing configuration file failed");
-        return -1;
-    }
-    WTSVariant* cfg = WTSVariant::createObject();
-    jsonToVariant(root, cfg);
+    // 2. 加载 configbt.yaml 转为 WTSVariant 类型
+	filename = "configbt.json";
+	if(!StdFile::exists(filename.c_str()))
+		filename = "configbt.yaml";
+
+	WTSVariant* cfg = WTSCfgLoader::load_from_file(filename.c_str(), true);
+	if (cfg == NULL)
+	{
+		WTSLogger::info_f("Loading configuration file {} failed", filename);
+		return -1;
+	}
 
     // 3. 初始化历史数据回放器
     HisDataReplayer replayer;
@@ -176,65 +157,53 @@ int main()
 
 ## 逐步解析
 
-### 1. 加载 logcfg.json
+### 1. 加载 logcfgbt.yaml
 
 ```cpp
+// 加载 logcfgbt.yaml 文件初始化日志对象
 void WTSLogger::init(const char* propFile /* = "logcfg.json" */, bool isFile /* = true */, ILogHandler* handler /* = NULL */, WTSLogLevel logLevel /* = LL_INFO */)
 {
-    // 1. 日志对象是否被初始化
-    if (m_bInited)
-        return;
+	if (m_bInited)
+		return;
 
-    // 2. 是否存在日志文件
-    if (isFile && !StdFile::exists(propFile))
-        return;
+	// 判断文件是否存在
+	if (isFile && !StdFile::exists(propFile))
+		return;
+	// 从文件/缓存中加载数据
+	WTSVariant* cfg = isFile ? WTSCfgLoader::load_from_file(propFile, true) : WTSCfgLoader::load_from_content(propFile, false, true);
+	if (cfg == NULL)
+		return;
 
-    // 3. 读取日志文件并转为WTSVariant类型
-    std::string content;
-    if (isFile)
-        StdFile::read_file_content(propFile, content);
-    else
-    // ?除了日志文件还有其他初始化日志对象的方法
-        content = propFile;
-    rj::Document root;
-    if (root.Parse(content.c_str()).HasParseError())
-    {
-        return;
-    }
-    WTSVariant* cfg = WTSVariant::createObject();
-    jsonToVariant(root, cfg);
+	// 获取一级节点键名并遍历
+	auto keys = cfg->memberNames();
+	for (std::string& key : keys)
+	{
+		WTSVariant* cfgItem = cfg->get(key.c_str());
+		if (key == DYN_PATTERN)		// "dyn_pattern"
+		{
+			auto pkeys = cfgItem->memberNames();
+			for(std::string& pkey : pkeys)
+			{
+				WTSVariant* cfgPattern = cfgItem->get(pkey.c_str());
+				if (m_mapPatterns == NULL)
+					m_mapPatterns = LogPatterns::create();
 
-    // 4. 初始化不同日志对象
-    auto keys = cfg->memberNames();
-    for (std::string& key : keys)
-    {
-        WTSVariant* cfgItem = cfg->get(key.c_str());
-        // 5. 添加策略日志
-        if (key == DYN_PATTERN)     // DYN_PATTERN = "dyn_pattern"
-        {
-            auto pkeys = cfgItem->memberNames();
-            for(std::string& pkey : pkeys)
-            {
-                WTSVariant* cfgPattern = cfgItem->get(pkey.c_str());
-                if (m_mapPatterns == NULL)
-                    m_mapPatterns = LogPatterns::create();
-                m_mapPatterns->add(pkey.c_str(), cfgPattern, true);
-            }
-            continue;
-        }
-        // 6. 根据配置文件初始化对应的日志对象
-        initLogger(key.c_str(), cfgItem);
-    }
+				m_mapPatterns->add(pkey.c_str(), cfgPattern, true);
+			}
+			continue;
+		}
+		// 根据配置文件初始化对应的日志对象
+		initLogger(key.c_str(), cfgItem);
+	}
+	// 日志设置
+	m_rootLogger = getLogger("root");
+	spdlog::set_default_logger(m_rootLogger);		// 设置默认logger
+	spdlog::flush_every(std::chrono::seconds(2));	// 日志刷新频率: 2s
 
-    // 7. 日志设置
-    m_rootLogger = getLogger("root");          
-    spdlog::set_default_logger(m_rootLogger);       // 设置默认logger
-    spdlog::flush_every(std::chrono::seconds(2));   // 日志刷新频率: 2s
+	m_logHandler = handler;		// 日志句柄
+	m_logLevel = logLevel;		// 日志级别
 
-    m_logHandler = handler;     // 日志句柄
-    m_logLevel = logLevel;      // 日志级别
-
-    m_bInited = true;           // 日志对象初始化完成标志
+	m_bInited = true;			// 日志对象初始化完成标志
 }
 ```
 
@@ -242,91 +211,149 @@ void WTSLogger::init(const char* propFile /* = "logcfg.json" */, bool isFile /* 
 5. m_mapPatterns 是一个map容器指针, 可以添加多个日志对象, 用来记录策略日志.(背后逻辑暂时不懂, 不重要)
 ```
 
-### 2. 读取配置文件并转为 WTSVariant 类型
+### 2. 加载 configbt.yaml 转为 WTSVariant 类型
 
-1. 利用 rapidjson 解析 config.json 文件
-2. 利用自定义函数 jsonToVariant 将 json 对象转为自定义的 WTSVariant 类型
+```cpp
+WTSVariant* WTSCfgLoader::load_from_file(const char* filename, bool isUTF8 /* = true */)
+{
+	if (!StdFile::exists(filename))
+		return NULL;
+
+	std::string content;
+	StdFile::read_file_content(filename, content);
+	if (content.empty())
+		return NULL;
+
+	//By Wesley @ 2022.01.07
+	//Linux下得是UTF8
+	//Win下得是GBK
+#ifdef _WIN32
+	if(isUTF8)
+		content = UTF8toChar(content);
+#endif
+	// 通过文件名判断读取 json 或 ymal 格式文件
+	if (StrUtil::endsWith(filename, ".json"))
+		return load_from_json(content.c_str());
+	else if (StrUtil::endsWith(filename, ".yaml") || StrUtil::endsWith(filename, ".yml"))
+		return load_from_yaml(content.c_str());
+
+	return NULL;
+}
+```
 
 ### 3. 初始化历史数据回放器
 
 ```cpp
+
 bool HisDataReplayer::init(WTSVariant* cfg, EventNotifier* notifier /* = NULL */, IBtDataLoader* dataLoader /* = NULL */)
 {
-    _notifier = notifier;        // 消息通知对象
-    _bt_loader = dataLoader;    // 数据加载器对象
+	_notifier = notifier;				// 消息通知对象
+	_bt_loader = dataLoader;			// 数据加载器对象
 
-    _mode = cfg->getCString("mode");    // 数据模式
-    _base_dir = StrUtil::standardisePath(cfg->getCString("path"));    // 数据存放路径
-    
-    bool isRangeCfg = (_begin_time == 0 || _end_time == 0);        // 是否从配置文件读取回测区间
-    if(_begin_time == 0)
-        _begin_time = cfg->getUInt64("stime");
-    if(_end_time == 0)
-        _end_time = cfg->getUInt64("etime");
+	_mode = cfg->getCString("mode");	// 数据模式
+	/*
+	 *	By Wesley @ 2022.01.11
+	 *	因为store可能会变复杂，所以这里做一个兼容处理
+	 *	如果有store就读取store的path，如果没有store，就还读取root的path
+	 */
+	if (cfg->has("store"))
+	{
+		_base_dir = StrUtil::standardisePath(cfg->get("store")->getCString("path"));	
+	}
+	else
+	{
+		_base_dir = StrUtil::standardisePath(cfg->getCString("path"));
+	}
 
-    WTSLogger::info(fmt::format("Backtest time range is set to be [{},{}] via config", _begin_time, _end_time).c_str());
+	if(_mode == "storage" || _mode == "bin")
+	{
+		if (cfg->has("store"))
+		{
+			_his_dt_mgr.init(cfg->get("store"));
+		}
+		else
+		{
+			WTSVariant* item = WTSVariant::createObject();
+			item->append("path", _base_dir.c_str());
+			_his_dt_mgr.init(item);
+			item->release();
+		}
+	}
+	
+	bool isRangeCfg = (_begin_time == 0 || _end_time == 0);	//是否从配置文件读取回测区间
+	if(_begin_time == 0)
+		_begin_time = cfg->getUInt64("stime");
 
-    _tick_enabled = cfg->getBoolean("tick");        // 是否回放tick数据
-    WTSLogger::info("Tick data replaying is %s", _tick_enabled ? "enabled" : "disabled");
+	if(_end_time == 0)
+		_end_time = cfg->getUInt64("etime");
 
-    // 基础配置文件
-    WTSVariant* cfgBF = cfg->get("basefiles");
-    // 加载交易时段配置文件
-    if (cfgBF->get("session"))
-        _bd_mgr.loadSessions(cfgBF->getCString("session"));
-    // 加载品种信息配置文件
-    WTSVariant* cfgItem = cfgBF->get("commodity");
-    if (cfgItem)
-    {
-        if (cfgItem->type() == WTSVariant::VT_String)
-        {
-            _bd_mgr.loadCommodities(cfgItem->asCString());
-        }
-        else if (cfgItem->type() == WTSVariant::VT_Array)
-        {
-            for(uint32_t i = 0; i < cfgItem->size(); i ++)
-            {
-                _bd_mgr.loadCommodities(cfgItem->get(i)->asCString());
-            }
-        }
-    }
-    // 加载合约信息配置文件
-    cfgItem = cfgBF->get("contract");
-    if (cfgItem)
-    {
-        if (cfgItem->type() == WTSVariant::VT_String)
-        {
-            _bd_mgr.loadContracts(cfgItem->asCString());
-        }
-        else if (cfgItem->type() == WTSVariant::VT_Array)
-        {
-            for (uint32_t i = 0; i < cfgItem->size(); i++)
-            {
-                _bd_mgr.loadContracts(cfgItem->get(i)->asCString());
-            }
-        }
-    }
-    // 加载节日信息配置文件
-    if (cfgBF->get("holiday"))
-        _bd_mgr.loadHolidays(cfgBF->getCString("holiday"));
-    // 加载主力合约切换配置文件
-    if (cfgBF->get("hot"))
-        _hot_mgr.loadHots(cfgBF->getCString("hot"));
-    // 加载次主力合约切换配置文件(无)
-    if (cfgBF->get("second"))
-        _hot_mgr.loadSeconds(cfgBF->getCString("second"));
-    // 加载手续费配置文件
-    loadFees(cfg->getCString("fees"));
+	WTSLogger::info_f("Backtest time range is set to be [{},{}] via config", _begin_time, _end_time);
 
-    /*
-     *    By Wesley @ 2021.12.20
-     *    先从extloader加载除权因子
-     *    如果加载失败，并且配置了除权因子文件，再加载除权因子文件
-     */
-    bool bLoaded = loadStkAdjFactorsFromLoader();
-    if (!bLoaded && cfg->has("adjfactor"))
-        loadStkAdjFactorsFromFile(cfg->getCString("adjfactor"));
-    return true;
+	_tick_enabled = cfg->getBoolean("tick");	// 是否回放tick数据
+	WTSLogger::info_f("Tick data replaying is {}", _tick_enabled ? "enabled" : "disabled");
+
+	// 基础数据文件
+	WTSVariant* cfgBF = cfg->get("basefiles");
+	// 基础配置文件的编码，这样可以兼容原来的配置
+	bool isUTF8 = cfgBF->getBoolean("utf-8");
+	// 加载交易时段配置文件
+	if (cfgBF->get("session"))
+		_bd_mgr.loadSessions(cfgBF->getCString("session"), isUTF8);
+	// 加载品种信息配置文件
+	WTSVariant* cfgItem = cfgBF->get("commodity");
+	if (cfgItem)
+	{
+		if (cfgItem->type() == WTSVariant::VT_String)
+		{
+			_bd_mgr.loadCommodities(cfgItem->asCString(), isUTF8);
+		}
+		else if (cfgItem->type() == WTSVariant::VT_Array)
+		{
+			for(uint32_t i = 0; i < cfgItem->size(); i ++)
+			{
+				_bd_mgr.loadCommodities(cfgItem->get(i)->asCString(), isUTF8);
+			}
+		}
+	}
+	// 加载合约信息配置文件
+	cfgItem = cfgBF->get("contract");
+	if (cfgItem)
+	{
+		if (cfgItem->type() == WTSVariant::VT_String)
+		{
+			_bd_mgr.loadContracts(cfgItem->asCString(), isUTF8);
+		}
+		else if (cfgItem->type() == WTSVariant::VT_Array)
+		{
+			for (uint32_t i = 0; i < cfgItem->size(); i++)
+			{
+				_bd_mgr.loadContracts(cfgItem->get(i)->asCString(), isUTF8);
+			}
+		}
+	}
+	// 加载节日信息配置文件
+	if (cfgBF->get("holiday"))
+		_bd_mgr.loadHolidays(cfgBF->getCString("holiday"));
+	// 加载主力合约切换配置文件
+	if (cfgBF->get("hot"))
+		_hot_mgr.loadHots(cfgBF->getCString("hot"));
+	// 加载次主力合约切换配置文件(无)
+	if (cfgBF->get("second"))
+		_hot_mgr.loadSeconds(cfgBF->getCString("second"));
+	// 加载手续费配置文件
+	loadFees(cfg->getCString("fees"));
+
+	/*
+	 *	By Wesley @ 2021.12.20
+	 *	先从extloader加载除权因子
+	 *	如果加载失败，并且配置了除权因子文件，再加载除权因子文件
+	 */
+	bool bLoaded = loadStkAdjFactorsFromLoader();
+
+	if (!bLoaded && cfg->has("adjfactor"))
+		loadStkAdjFactorsFromFile(cfg->getCString("adjfactor"));
+
+	return true;
 }
 ```
 
@@ -338,45 +365,45 @@ bool HisDataReplayer::init(WTSVariant* cfg, EventNotifier* notifier /* = NULL */
 ### 5. 利用调度器初始化cta策略工厂
 
 ```cpp
+// 根据配置文件初始化cta策略工厂
 bool CtaMocker::init_cta_factory(WTSVariant* cfg)
 {
-    if (cfg == NULL)
-        return false;
-    // 1. 加载策略工厂dll文件: WtCtaStraFact.dll
-    const char* module = cfg->getCString("module");
-    DllHandle hInst = DLLHelper::load_library(module);
-    if (hInst == NULL)
-        return false;
+	if (cfg == NULL)
+		return false;
 
-    // 2. 获取dll文件中创建策略的方法: createStrategyFact
-    FuncCreateStraFact creator = (FuncCreateStraFact)DLLHelper::get_symbol(hInst, "createStrategyFact");
-    if (creator == NULL)
-    {
-        DLLHelper::free_library(hInst);
-        return false;
-    }
+	const char* module = cfg->getCString("module");		// 文件名
+	// 1. 加载策略工厂dll文件: WtCtaStraFact.dll
+	DllHandle hInst = DLLHelper::load_library(module);	// 加载dll文件
+	if (hInst == NULL)
+		return false;
+	// 2. 获取dll文件中创建策略的方法: createStrategyFact
+	FuncCreateStraFact creator = (FuncCreateStraFact)DLLHelper::get_symbol(hInst, "createStrategyFact");
+	if (creator == NULL)
+	{
+		DLLHelper::free_library(hInst);
+		return false;
+	}
+	// 3. 填充自定义的工厂结构体对象 _factory
+	_factory._module_inst = hInst;
+	_factory._module_path = module;
+	_factory._creator = creator;
+	_factory._remover = (FuncDeleteStraFact)DLLHelper::get_symbol(hInst, "deleteStrategyFact");
+	_factory._fact = _factory._creator();
 
-    // 3. 填充自定义的工厂结构体对象 _factory
-    _factory._module_inst = hInst;
-    _factory._module_path = module;
-    _factory._creator = creator;
-    _factory._remover = (FuncDeleteStraFact)DLLHelper::get_symbol(hInst, "deleteStrategyFact");
-    _factory._fact = _factory._creator();
-
-    WTSVariant* cfgStra = cfg->get("strategy");
-    if (cfgStra)
-    {
-        // 4. 利用策略工创建策略对象, 并传递给调度器中的策略对象: _strategy
-        _strategy = _factory._fact->createStrategy(cfgStra->getCString("name"), cfgStra->getCString("id"));
-        if(_strategy)
-        {
-            WTSLogger::info("Strategy %s.%s is created,strategy ID: %s", _factory._fact->getName(), _strategy->getName(), _strategy->id());
-        }
-        // 5. 利用策略文件对策略进行初始化
-        _strategy->init(cfgStra->get("params"));
-        _name = _strategy->id();    // 调度器中的策略ID
-    }
-    return true;
+	WTSVariant* cfgStra = cfg->get("strategy");
+	if (cfgStra)
+	{
+		// 4. 利用策略工创建策略对象, 并传递给调度器中的策略对象: _strategy
+		_strategy = _factory._fact->createStrategy(cfgStra->getCString("name"), cfgStra->getCString("id"));
+		if(_strategy)
+		{
+			WTSLogger::info("Strategy %s.%s is created,strategy ID: %s", _factory._fact->getName(), _strategy->getName(), _strategy->id());
+		}
+		// 5. 利用策略文件对策略进行初始化
+		_strategy->init(cfgStra->get("params"));
+		_name = _strategy->id();	// 调度器中的策略ID
+	}
+	return true;
 }
 ```
 
@@ -404,34 +431,31 @@ inline void register_sink(IDataSink* listener, const char* sinkName)
 ```cpp
 bool HisDataReplayer::prepare()
 {
-    if (_running)
-    {
-        WTSLogger::error("Cannot run more than one backtesting task at the same time");
-        return false;
-    }
-    _running = true;
-    _terminated = false;
-    reset();        // 数据全部初始化
+	if (_running)
+	{
+		WTSLogger::log_raw(LL_ERROR, "Cannot run more than one backtesting task at the same time");
+		return false;
+	}
 
-    // 1. begin_time是整数型日期(精确到分, 在配置文件中)如: 201905010900
-    _cur_date = (uint32_t)(_begin_time / 10000);
-    _cur_time = (uint32_t)(_begin_time % 10000);
-    _cur_secs = 0;
-    // 2. 计算时间偏移后的交易日(过滤节假日)
-    _cur_tdate = _bd_mgr.calcTradingDate(DEFAULT_SESSIONID, _cur_date, _cur_time, true);
+	_running = true;
+	_terminated = false;
+	reset();	// 数据全部初始化
+	// 1. begin_time是整数型日期(精确到分, 在配置文件中)如: 201905010900
+	_cur_date = (uint32_t)(_begin_time / 10000);
+	_cur_time = (uint32_t)(_begin_time % 10000);
+	_cur_secs = 0;
+	// 2. 计算时间偏移后的交易日(过滤节假日)
+	_cur_tdate = _bd_mgr.calcTradingDate(DEFAULT_SESSIONID, _cur_date, _cur_time, true);
+	// 3. 通知事件: 回测开始
+	if (_notifier)
+		_notifier->notifyEvent("BT_START");
+	// 4. 调度器中的回调函数
+	_listener->handle_init();
+	// 5. 如果没有tick数据就加载Bar数据
+	if (!_tick_enabled)
+		checkUnbars();
 
-    // 3. 通知事件: 回测开始
-    if (_notifier)
-        _notifier->notifyEvent("BT_START");
-
-    // 4. 调度器中的回调函数
-    _listener->handle_init();
-
-    // 5. 如果没有tick数据就加载Bar数据
-    if (!_tick_enabled)
-        checkUnbars();
-
-    return true;
+	return true;
 }
 ```
 
