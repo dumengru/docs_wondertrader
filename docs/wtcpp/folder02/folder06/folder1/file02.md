@@ -1,12 +1,13 @@
-# CTA策略示例
+# WtStraDualThrust.h
 
 source: `{{ page.path }}`
 
-## WtStraDualThrust.h
-
-### WtStraDualThrust
+CTA策略demo
 
 ```cpp
+#pragma once
+#include "../Includes/CtaStrategyDefs.h"
+
 class WtStraDualThrust : public CtaStrategy
 {
 public:
@@ -36,11 +37,9 @@ private:
 	//数据周期
 	std::string _period;
 	//K线条数
-	uint32_t	_count;
-
+	uint32_t	_count
 	//合约代码
 	std::string _code;
-
 	bool		_isstk;
 };
 ```

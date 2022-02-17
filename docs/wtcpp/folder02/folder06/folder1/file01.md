@@ -1,14 +1,15 @@
-# CTA策略工厂
+# WtCtaStraFact.h
 
 source: `{{ page.path }}`
-
-## WtCtaStraFact.h
-
-### WtStraFact
 
 实现了CTA策略接口
 
 ```cpp
+#pragma once
+#include "../Includes/CtaStrategyDefs.h"
+
+USING_NS_WTP;
+
 class WtStraFact : public ICtaStrategyFact
 {
 public:
@@ -17,24 +18,36 @@ public:
 
 public:
 	virtual const char* getName() override;
+
 	virtual CtaStrategy* createStrategy(const char* name, const char* id) override;
+
 	virtual void enumStrategy(FuncEnumStrategyCallback cb) override;
+
 	virtual bool deleteStrategy(CtaStrategy* stra) override;	
 };
 ```
 
-### WtCtaStraFact.cpp
+## WtCtaStraFact.cpp
 
 ```cpp
+#include "WtCtaStraFact.h"
+#include "WtStraDualThrust.h"
+
+#include <string.h>
+#include <boost/config.hpp>
+
+// CTA策略工厂名称
 const char* FACT_NAME = "WtCtaStraFact";
 
 extern "C"
 {
+	// 导出策略工厂dll
 	EXPORT_FLAG ICtaStrategyFact* createStrategyFact()
 	{
 		ICtaStrategyFact* fact = new WtStraFact();
 		return fact;
 	}
+	// 删除策略
 	EXPORT_FLAG void deleteStrategyFact(ICtaStrategyFact* fact)
 	{
 		if (fact != NULL)
@@ -48,7 +61,7 @@ WtStraFact::WtStraFact()
 WtStraFact::~WtStraFact()
 {}
 
-// 创建策略对象(传入策略名称, 和配置文件中的"name"一致)
+// 创建策略, 策略名称被定死了
 CtaStrategy* WtStraFact::createStrategy(const char* name, const char* id)
 {
 	if (strcmp(name, "DualThrust") == 0)
@@ -57,7 +70,7 @@ CtaStrategy* WtStraFact::createStrategy(const char* name, const char* id)
 	return NULL;
 }
 
-// 删除策略对象
+// 删除策略
 bool WtStraFact::deleteStrategy(CtaStrategy* stra)
 {
 	if (stra == NULL)
@@ -70,7 +83,6 @@ bool WtStraFact::deleteStrategy(CtaStrategy* stra)
 	return true;
 }
 
-// 枚举策略(有回调函数)
 void WtStraFact::enumStrategy(FuncEnumStrategyCallback cb)
 {
 	cb(FACT_NAME, "DualThrust", false);
@@ -78,7 +90,7 @@ void WtStraFact::enumStrategy(FuncEnumStrategyCallback cb)
 	cb(FACT_NAME, "CtaXPA", true);
 }
 
-// 获取策略名称
+// 获取策略工厂名称
 const char* WtStraFact::getName()
 {
 	return FACT_NAME;
