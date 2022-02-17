@@ -1,7 +1,3 @@
-# WtCore
+# WtDtServo
 
 source: `{{ page.path }}`
-
-```note
-
-```

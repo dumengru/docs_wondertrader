@@ -110,7 +110,7 @@ config.json 内容
 ```note
 仿真采用simnow实现，账户需要自行前往[simnow官网](https://www.simnow.com.cn/)注册，注册后需要重置一次密码才能够使用。config.json中的user对应simnow账户中的investorID,pass则为账户密码。
 ```
-![project_setting.png](/docs/wtcpp_demo/folder02/pic/simnow.png)
+![project_setting.png](../../assets/images/wt/hej_02_simnow.png)
 
 logcfg.json 内容
 

@@ -1,7 +1,4 @@
-# WtCore
+# NULL
 
 source: `{{ page.path }}`
 
-```note
-
-```

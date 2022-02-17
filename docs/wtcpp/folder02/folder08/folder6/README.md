@@ -1,7 +1,3 @@
-# WtCore
+# WtDataStorageAD
 
 source: `{{ page.path }}`
-
-```note
-
-```
