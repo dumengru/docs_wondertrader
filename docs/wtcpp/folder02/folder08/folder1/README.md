@@ -1,3 +1,3 @@
-# WtDtCore
+# WtDataStorage
 
 source: `{{ page.path }}`

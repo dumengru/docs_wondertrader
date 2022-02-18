@@ -1,3 +1,3 @@
-# WtDtServo
+# WtDtCore
 
 source: `{{ page.path }}`
