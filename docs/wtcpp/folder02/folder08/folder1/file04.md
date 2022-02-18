@@ -1,4 +1,4 @@
-# StateMonitor.h
+# DataManager.h
 
 source: `{{ page.path }}`
 
