@@ -229,6 +229,7 @@ thostmduserapi_se.dll为行情模块，放在生成目录的`parsers`文件夹�
           - thosttraderapi_se.dll
         - logcfg.json
         - config.json
+        - actpolicy.json
 
 ### 编译运行程序（WtRunner工程）
 
