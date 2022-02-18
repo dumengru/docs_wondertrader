@@ -104,13 +104,13 @@ source: `{{ page.path }}`
         engine.release_backtest()
     ```
 * 然后启动runBT.py进行回测，回测的执行如下
-    ![alt 回测示例图](../../assets/images/wtpy/wtpy030.jfif)
+    ![alt 回测示例图](../../assets/images/wtpy/wtpy030.png)
 
 * 回测完成以后，打开生成的绩效分析报表(xxxx.xlsx)，则可以查看策略的回测绩效
     回测绩效概览
     ![alt 回测绩效概览](../../assets/images/wtpy/wtpy031.png)
     回测收益详情
-    ![alt 回测绩效详情](../../assets/images/wtpy/wtpy032.jfif)
+    ![alt 回测绩效详情](../../assets/images/wtpy/wtpy032.png)
     从上图的绩效分析可以看出，DualThrust策略，针对股指期货主力合约，在20190919到20191201这段时间内，这组参数下进行回测，一直处于回撤的状态，累计亏损达20%。可见，这不是一组好的参数。
 
 * 接下来我们调整参数，将K1和K2改成0.5和0.3，再进行回测和分析，得到如下结果
