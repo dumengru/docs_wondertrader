@@ -35,6 +35,10 @@ if(m_sink)
 tick->release();
 ```
 
+```tip
+为何可以这么改? 建议查看文章 "数据落地" 深入了解
+```
+
 4. 图片展示
 
 ![](../../assets/images/wt/wt009.png)
