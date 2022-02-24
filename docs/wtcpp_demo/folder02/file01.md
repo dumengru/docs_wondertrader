@@ -819,27 +819,28 @@ bool ParserAdapter::init(const char* id, WTSVariant* cfg)
 
 ### 2. 行情代码执行顺序
 
-1. main.cpp文件
+1.main.cpp文件
 
 ```cpp
 // 初始化行情适配器
 adapter->init(realid.c_str(), cfgItem);
 ```
 
-2. ParserAdapter.cpp
+2.ParserAdapter.cpp
+
 ```cpp
 // 初始化CTP行情解析器
 _parser_api->init(cfg)
 ```
 
-3. ParserCTP.cpp
+3.ParserCTP.cpp
 
 ```cpp
 // 将 ParserCTP 注册为行情回调接口
 m_pUserAPI->RegisterSpi(this);
 ```
 
-4. 当接口获取到行情数据时, 回调
+4.当接口获取到行情数据时, 回调
 
 ```cpp
 void ParserCTP::OnRtnDepthMarketData( CThostFtdcDepthMarketDataField *pDepthMarketData )
@@ -852,7 +853,7 @@ void ParserCTP::OnRtnDepthMarketData( CThostFtdcDepthMarketDataField *pDepthMark
 }
 ```
 
-5. ParserAdapter.cpp
+5.ParserAdapter.cpp
 
 ```cpp
 void ParserAdapter::handleQuote( WTSTickData *quote, uint32_t procFlag )
@@ -863,7 +864,7 @@ void ParserAdapter::handleQuote( WTSTickData *quote, uint32_t procFlag )
 }
 ```
 
-7. DataManager.cpp
+6.DataManager.cpp
 
 ```cpp
 bool DataManager::writeTick(WTSTickData* curTick, uint32_t procFlag)
@@ -873,7 +874,7 @@ bool DataManager::writeTick(WTSTickData* curTick, uint32_t procFlag)
 }
 ```
 
-8. WtDataWriter.cpp
+7.WtDataWriter.cpp
 
 ```cpp
 //写到tick缓存

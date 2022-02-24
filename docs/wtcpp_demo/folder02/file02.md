@@ -12,11 +12,13 @@ source: `{{ page.path }}`
 
 ## 准备好修改源码了嘛?
 
-1. 打开 "src\ParserCTP\ParserCTP.cpp"
-2. 找到函数 `ParserCTP::OnRtnDepthMarketData`
-3. 在改函数中添加代码
-- 逻辑: 如果 m_uTradingDate == 0, 则手动计算trading_date并填充
+1.打开 "src\ParserCTP\ParserCTP.cpp"
 
+2.找到函数 `ParserCTP::OnRtnDepthMarketData`
+
+3.在改函数中添加代码
+
+- 逻辑: 如果 m_uTradingDate == 0, 则手动计算trading_date并填充
 ```cpp
 /* ----- 添加代码0 ------*/
 if (m_sink && m_uTradingDate == 0)
@@ -39,11 +41,11 @@ tick->release();
 为何可以这么改? 建议查看文章 "数据落地" 深入了解
 ```
 
-4. 图片展示
+4.图片展示
 
 ![](../../assets/images/wt/wt009.png)
 
-5. 重新编译
+5.重新编译
 
 ![](../../assets/images/wt/wt010.png)
 
@@ -163,11 +165,12 @@ FN0230:
 ```
 
 #### 2. 添加 tts_thostmduserapi_se.dll
-1. 进入 openctp 项目网站, 下载对应版本的 dll文件
+
+1.进入 openctp 项目网站, 下载对应版本的 dll文件
 
 ![](../../assets/images/wt/wt011.png)
 
-1. 将 `thostmduserapi_se.dll` 改名为 `tts_thostmduserapi_se.dll`(这里只用到行情dll), 并放到 "Debug\QuoteFactory\parsers" 目录下
+2.将 `thostmduserapi_se.dll` 改名为 `tts_thostmduserapi_se.dll`(这里只用到行情dll), 并放到 "Debug\QuoteFactory\parsers" 目录下
 
 #### 3. 确认修改成功
 
