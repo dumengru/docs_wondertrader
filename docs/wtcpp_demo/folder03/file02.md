@@ -7,6 +7,193 @@ source: `{{ page.path }}`
 ### 需要先完成`生成解决方案`
 
 ### 1. 配置文件
+- logcfg.yaml 
+- config.yaml
+- filters.yaml
+- actpolicy.yaml
+- WtDataStorage.dll
+- WtRiskMonFact.dll
+- common配置目录
+  - sessions.json"
+  - commodities.json"
+  - contracts.json"
+  - holidays.json"
+  - hots.json"
+- hft策略文件目录
+  - WtHftStraFact.dll
+- parsers行情文件目录
+  - ParserCTP.dll
+  - tts_thostmduserapi_se.dll
+- traders交易文件目录
+  - TraderCTP.dll
+  - thosttraderapi_se.dll
+
+config.yaml样式
+```cpp
+basefiles:
+    session: ./common/sessions.json
+    commodity: ./common/commodities.json
+    contract: ./common/contracts.json
+    holiday: ./common/holidays.json
+    hot: ./common/hots.json
+    utf-8: false
+env:
+    name: hft	# 确定交易引擎类型
+    mode: product
+    filters: filters.yaml
+    fees: ./common/fees.json
+    product: 
+        session: FN0230   # 为时间步进器提供
+bspolicy: actpolicy.yaml
+data:
+    store:
+        path: ./FUT_Data/
+strategies:
+    hft:
+    -   active: true
+        id: hft_demo
+        name: WtHftStraFact.HftDemoStrategy
+        params:
+            code: SHFE.au.2204	#  注意格式
+            count: 10
+            second: 10
+            offset: 1
+            count: 50
+            stock: false
+        trader: tts24
+traders:
+-   active: false
+    id: tts
+    module: TraderCTP
+    ctpmodule: tts_thosttraderapi_se
+    front: tcp://121.36.146.182:20002
+    broker: 
+    user: 1493
+    pass: 123456
+    appid:
+    authcode:
+    quick: true
+    riskmon:
+        active: false
+        policy:
+            default:
+                order_times_boundary: 20
+                order_stat_timespan: 10
+                cancel_times_boundary: 20
+                cancel_stat_timespan: 10
+                cancel_total_limits: 470
+-   active: true
+    id: tts24
+    module: TraderCTP
+    ctpmodule: tts_thosttraderapi_se
+    front: tcp://122.51.136.165:20002
+    broker: 
+    user: 1493
+    pass: 123456
+    appid:
+    authcode:
+    quick: true
+    riskmon:
+        active: false
+        policy:
+            default:
+                order_times_boundary: 20
+                order_stat_timespan: 10
+                cancel_times_boundary: 20
+                cancel_stat_timespan: 10
+                cancel_total_limits: 470
+parsers:
+-   active: false
+    broker: 
+    id: tts
+    module: ParserCTP
+    front: tcp://121.36.146.182:20004
+    ctpmodule: tts_thostmduserapi_se
+    pass: 123456
+    user: 1493
+    code: SHFE.au2204,SHFE.au2205
+-   active: true
+    broker: 
+    id: tts24
+    module: ParserCTP
+    front: tcp://122.51.136.165:20004
+    ctpmodule: tts_thostmduserapi_se
+    pass: 123456
+    user: 1493
+    code: SHFE.au2204,SHFE.au2205
+```
+
+logcfg.yaml样式
+```cpp
+dyn_pattern:
+    executer:
+        async: false
+        level: debug
+        sinks:
+        -   filename: Logs/Executer_%s.log
+            pattern: '[%Y.%m.%d %H:%M:%S - %-5l] %v'
+            truncate: true
+            type: daily_file_sink
+    parser:
+        async: false
+        level: debug
+        sinks:
+        -   filename: Logs/Parser_%s.log
+            pattern: '[%Y.%m.%d %H:%M:%S - %-5l] %v'
+            truncate: true
+            type: daily_file_sink
+    strategy:
+        async: false
+        level: debug
+        sinks:
+        -   filename: Logs/Strategy/%s.log
+            pattern: '[%Y.%m.%d %H:%M:%S - %-5l] %v'
+            truncate: true
+            type: daily_file_sink
+    trader:
+        async: false
+        level: debug
+        sinks:
+        -   filename: Logs/Trader_%s.log
+            pattern: '[%Y.%m.%d %H:%M:%S - %-5l] %v'
+            truncate: true
+            type: daily_file_sink
+risk:
+    async: false
+    level: debug
+    sinks:
+    -   filename: Logs/Riskmon.log
+        pattern: '[%Y.%m.%d %H:%M:%S - %-5l] %v'
+        truncate: true
+        type: daily_file_sink
+root:
+    async: false
+    level: debug
+    sinks:
+    -   filename: Logs/Runner.log
+        pattern: '[%Y.%m.%d %H:%M:%S - %-5l] %v'
+        truncate: true
+        type: daily_file_sink
+    -   pattern: '[%m.%d %H:%M:%S - %-5l] %v'
+        type: ostream_sink
+```
+
+### 2. 配置 openctp 仿真
+
+参看文章"对接 openctp"
+
+### 3. 修改策略文件
+
+为了方便测试, 建议对策略文件 `WtHftStraDemo.cpp` 做小小的修改
+
+1.打开并修改文件
+![](../../assets/images/wt/wt015.png)
+
+2.重新生成
+![](../../assets/images/wt/wt016.png)
+
+3.移动文件
+将 "src\x64\Debug\" 目录下的 "WtHftStraFact.dll" 移动到 "src\x64\Debug\WtRunner\hft" 目录
 
 ## 逐步解析
 
@@ -525,8 +712,82 @@ _engine->run(bAsync);
 
 #### 1. 启动行情通道
 
+启动步骤
+1. 启动行情适配管理器 `ParserAdapterMgr::run()`
+2. 逐个启动适配器 `ParserAdapter::run()`
+3. 启动对应的行情解析器 `ParserCTP::connect()`
+4. 调用解析器中的行情API接口初始化 `m_pUserAPI->Init();`
+
 #### 2. 启动交易通道
+
+启动步骤
+1. 启动交易适配管理器 `TraderAdapterMgr::run()`
+2. 逐个启动适配器 `TraderAdapter::run()`
+3. 将交易适配器添加到交易解析器 `_trader_api->registerSpi(this);`
+4. 启动对应的交易解析器 `TraderCTP::connect()`
+5. 调用解析器中的交易API接口初始化 `m_pUserAPI->Init();`
 
 #### 3. 启动策略引擎
 
-## 
+```cpp
+
+void WtHftEngine::run(bool bAsync /*= false*/)
+{
+	// 1. 启动全部上下文管理器映射
+	for (auto it = _ctx_map.begin(); it != _ctx_map.end(); it++)
+	{
+		HftContextPtr& ctx = (HftContextPtr&)it->second;
+		// 1.1 上下文管理器初始化
+		ctx->on_init();
+	}
+
+	// 2. 创建生产时间步进器并初始化
+	_tm_ticker = new WtHftRtTicker(this);
+	WTSVariant* cfgProd = _cfg->get("product");
+	_tm_ticker->init(_data_mgr->reader(), cfgProd->getCString("session"));
+
+	//启动之前,先把运行中的策略落地(即生成: generated\marker.json)
+	{
+		...
+	}
+	// 3. 启动步进器
+	_tm_ticker->run();
+
+	if (!bAsync)
+	{
+		boost::asio::io_service::work work(g_asyncIO);
+		g_asyncIO.run();
+	}
+}
+```
+
+**1.1 上下文管理器初始化**
+
+执行步骤:
+1.进入`HftStraContext::on_init()`
+2.回调策略 `_strategy->on_init(this);`
+3.策略文件 `WtHftStraDemo.cpp` 中的 `on_init` 方法如下
+```cpp
+void WtHftStraDemo::on_init(IHftStraCtx* ctx)
+{
+	// 获取数据
+	WTSTickSlice* ticks = ctx->stra_get_ticks(_code.c_str(), _count);
+	if (ticks)
+		ticks->release();
+	// 订阅行情
+	ctx->stra_sub_ticks(_code.c_str());
+	_ctx = ctx;
+	_ctx->stra_log_info("回调策略 on_init ");	// 自己添加的
+}
+```
+4.因此首先进入`HftStraBaseCtx::stra_get_ticks` 获取数据
+5.然后进入 ` HftStraBaseCtx::stra_sub_ticks` 订阅行情
+6.策略上下文回调策略初始化完毕
+
+**2. 创建生产时间步进器并初始化**
+
+为步进器添加数据读取器和交易时间段信息
+
+## 验证成功
+
+![](../../assets/images/wt/wt017.png)
