@@ -1,4 +1,4 @@
-# CTA回测流程逐步解析
+# CTA回测详解
 
 source: `{{ page.path }}`
 
@@ -18,7 +18,7 @@ source: `{{ page.path }}`
   - holidays.json"
   - hots.json"
 
-configbt.yaml 大概长这样
+configbt.yaml 样式
 
 ```yaml
 replayer:                   # 回放器配置，包块数据格式、存放路径、交易费用等
@@ -51,7 +51,7 @@ cta:                # 策略工厂配置
             stock: false
 ```
 
-logcfg.yaml 大概长这样
+logcfg.yaml 样式
 
 ```yaml
 root:                   # 根日志对象的配置，通常是框架信息
