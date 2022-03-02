@@ -3,7 +3,7 @@
 source: `{{ page.path }}`
 
 ```tip
-数据转换功能主要在 `WtDtHelper.cpp`, 最新0.9版本(截止20220302)存在BUG(以后应该会修复), 当前使用稳定0.8版本
+数据转换功能主要在 `WtDtHelper.cpp`, 最新0.9版本(截止20220302)存在BUG(csv转dsb然后再转csv会乱码, 以后应该会修复), 当前使用稳定0.8版本
 ```
 
 ## **WonderTrader**数据存储方式
@@ -43,7 +43,7 @@ rates["time"] = rates["time"].map(lambda x: x + timedelta(minutes=delta_min))
 
 ## 创建项目环境
 
-1. Tests下新建项目(TestDtHelper)
+1. **Tests下新建项目(TestDtHelper)**
 2. 添加引用(WtDtHelper, WTSToolsLib)
 3. 添加源文件(TestDtHelper.cpp)
 ![](../../assets/images/wt/wt019.png)
@@ -52,7 +52,7 @@ rates["time"] = rates["time"].map(lambda x: x + timedelta(minutes=delta_min))
 ![](../../assets/images/wt/wt021.png)
 (**项目属性途中属性设置可能不完整,其他属性可参考同目录下TestDtPorter项目属性设置**
 
-在`TestDtHelper.cpp`添加测试代码确保项目环境配置无误(如果编译不通过建议检查环境, 不要再往下了)
+在`TestDtHelper.cpp`添加测试代码确保项目环境配置无误(**如果编译不通过建议检查环境, 不要再往下了**)
 
 ```cpp
 #pragma once
@@ -221,7 +221,9 @@ void csv_to_bars(WtString csvFolder, WtString binFolder, WtString period, FuncLo
 
 int main()
 {
+	// csv转dsb
 	csv_to_bars("csv/m1", "bin/m1", "m1", on_log);
+	// dsb转csv
 	dump_bars("bin/m1", "csv/out");
 
 	csv_to_bars("csv/m5", "bin/m5", "m5", on_log);
@@ -338,7 +340,9 @@ int main()
 	//csv_to_bars("csv/m5", "bin/m5", "m5", on_log);
 	//dump_bars("bin/m5", "csv/out");
 
+	// csv转dsb
 	csv_to_ticks("csv/ticks", "bin/ticks", on_log);
+	// dsb转csv
 	dump_ticks("bin/ticks", "csv/out");
 
 	return 0;
