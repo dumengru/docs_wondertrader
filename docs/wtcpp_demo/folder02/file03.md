@@ -51,7 +51,9 @@ rates["time"] = rates["time"].map(lambda x: x + timedelta(minutes=delta_min))
 ![](../../assets/images/wt/wt020.png)
 ![](../../assets/images/wt/wt021.png)
 (**项目属性途中属性设置可能不完整,其他属性可参考同目录下TestDtPorter项目属性设置**
-1. 在`TestDtHelper.cpp`添加测试代码确保项目环境配置无误(如果编译不通过建议检查环境, 不要再往下了)
+
+在`TestDtHelper.cpp`添加测试代码确保项目环境配置无误(如果编译不通过建议检查环境, 不要再往下了)
+
 ```cpp
 #pragma once
 #define _CRT_SECURE_NO_WARNINGS
@@ -113,7 +115,7 @@ int main()
 
 #### 3. bar数据
 
-在 `TestDtHelper.cpp` 中编写代码, 主要逻辑是创建bar结构体vector `std::vector<WTSBarStruct> bars;`, 然后填充结构体, 最后调用 `store_bars` 即可. 注意填充bar结构体是对应列名.
+在 `TestDtHelper.cpp` 中编写代码, 主要逻辑是创建bar结构体vector `std::vector<WTSBarStruct> bars;`, 然后填充结构体, 最后调用 `store_bars` 即可. 注意填充bar结构体时对应列名.
 
 ```cpp
 // 回调日志输出
@@ -345,4 +347,4 @@ int main()
 
 ### 成功验证
 
-检查 `csv/out' 目录下的csv数据和原数据是否一致即可!!!
+检查 `csv/out` 目录下的csv数据和原数据是否一致即可!!!
