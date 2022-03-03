@@ -67,7 +67,7 @@ traders:
     module: TraderCTP
     ctpmodule: tts_thosttraderapi_se
     front: tcp://121.36.146.182:20002
-    broker: 
+    broker: ""      # 可以为空, 但必须要有
     user: 1493
     pass: 123456
     appid:
@@ -87,7 +87,7 @@ traders:
     module: TraderCTP
     ctpmodule: tts_thosttraderapi_se
     front: tcp://122.51.136.165:20002
-    broker: 
+    broker: ""
     user: 1493
     pass: 123456
     appid:
@@ -104,7 +104,7 @@ traders:
                 cancel_total_limits: 470
 parsers:
 -   active: false
-    broker: 
+    broker: ""
     id: tts
     module: ParserCTP
     front: tcp://121.36.146.182:20004
@@ -113,7 +113,7 @@ parsers:
     user: 1493
     code: SHFE.au2204,SHFE.au2205
 -   active: true
-    broker: 
+    broker: ""
     id: tts24
     module: ParserCTP
     front: tcp://122.51.136.165:20004

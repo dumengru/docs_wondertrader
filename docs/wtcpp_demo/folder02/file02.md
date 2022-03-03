@@ -19,6 +19,7 @@ source: `{{ page.path }}`
 3.在改函数中添加代码
 
 - 逻辑: 如果 m_uTradingDate == 0, 则手动计算trading_date并填充
+
 ```cpp
 /* ----- 添加代码0 ------*/
 if (m_sink && m_uTradingDate == 0)
