@@ -29,7 +29,7 @@ source: `{{ page.path }}`
   - thosttraderapi_se.dll
 
 config.yaml样式
-```cpp
+```yaml
 basefiles:
     session: ./common/sessions.json
     commodity: ./common/commodities.json
