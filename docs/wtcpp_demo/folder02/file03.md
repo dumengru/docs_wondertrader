@@ -86,10 +86,11 @@ int main()
 - `dump_ticks`: tick数据dsb转csv
 
 注意事项:
-1. 数据压缩时, 日期date字段将保存为数字日期(如20220302), 时间time字段将保存为: 数字日期-1990+数字时间(没有秒)
-2. csv读取可用 `CsvHelper.h`
-3. 日期时间处理可用 `TimeUtils.hpp`
-4. 字符串处理可用 `StrUtil.hpp`
+1. bar数据压缩时, 日期date字段将保存为数字日期(如20220302), 时间time字段将保存为: 数字日期-1990+数字时间(精确到分)
+2. tick数据压缩时, 数字时间精确到毫秒(如 12:41:11.123 -> 124111123)
+3. csv读取可用 `CsvHelper.h`
+4. 日期时间处理可用 `TimeUtils.hpp`
+5. 字符串处理可用 `StrUtil.hpp`
 
 ### 数据压缩和解压
 
@@ -98,25 +99,17 @@ int main()
 在 "Debug/TestDtHelper" 目录下新建
 - bin
   - m1
-  - m5
   - ticks
 - csv
   - m1
-  - m5
   - ticks
   - out
 
 将准备的分钟csv文件放入csv对应目录下
 
-(bin下将会生成csv转dsb文件, csv/out会保存dsb转csv结果)
-
-#### 2. 修改源码
-
-```dange
-由于我的数据是7*24小时数据, 在凌晨一点前, 即小时为0时, 数据计算会出错, 因此修改这里, 此处问了群主**非必要别修改**
+```tip
+bin下将会生成csv转dsb文件, csv/out会保存dsb转csv结果
 ```
-在 `WtDtHelper.cpp` 中的 `strToTime` 函数下修改一个地方: (>10000 改为 >= 100, 确保时间 `00:01:00` 能正确计算)
-![](../../assets/images/wt/wt022.png)
 
 #### 3. bar数据
 
@@ -233,9 +226,6 @@ int main()
 	// dsb转csv
 	dump_bars("bin/m1", "csv/out");
 
-	csv_to_bars("csv/m5", "bin/m5", "m5", on_log);
-	dump_bars("bin/m5", "csv/out");
-
 	return 0;
 }
 ```
@@ -246,7 +236,7 @@ int main()
 ```dange
 1. 如果是测试, 建议少整点tick数据
 
-2. 如果你的数据精度>3, 比如我使用外汇数据, 精度为5, 则需要修改源码 `dump_ticks`函数下有一句输出精度`ss.precision(5);`(非必要别改源码)
+2. dsb转csv时, 如果你的数据精度>3, 比如我使用外汇数据, 精度为5, 则需要修改源码 `dump_ticks`函数下有一句输出精度`ss.precision(5);`(非必要别改源码)
 
 3. **注意tick中action_time字段计算, 而且精确到毫秒**
 ```
@@ -367,9 +357,6 @@ int main()
 {
 	//csv_to_bars("csv/m1", "bin/m1", "m1", on_log);
 	//dump_bars("bin/m1", "csv/out");
-
-	//csv_to_bars("csv/m5", "bin/m5", "m5", on_log);
-	//dump_bars("bin/m5", "csv/out");
 
 	// csv转dsb
 	csv_to_ticks("csv/ticks", "bin/ticks", on_log);
