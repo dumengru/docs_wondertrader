@@ -3,7 +3,9 @@
 source: `{{ page.path }}`
 
 ```tip
-数据转换功能主要在 `WtDtHelper.cpp`, 最新0.9版本(截止20220302)存在BUG(csv转dsb然后再转csv会乱码, 以后应该会修复), 当前使用稳定0.8版本
+1. 数据转换功能主要在 `WtDtHelper.cpp`, 最新0.9版本(截止20220302)存在BUG(csv转dsb然后再转csv会乱码, 以后应该会修复), 当前使用稳定0.8版本
+
+2. 所有日期和时间都是数值型时间, 其中bar数据time字段需要计算,精确到分; tick数据action_time字段需要计算, 精确到毫秒
 ```
 
 ## **WonderTrader**数据存储方式
@@ -38,8 +40,11 @@ elif timeframe == TIMEFRAME_M5:
 rates["time"] = rates["time"].map(lambda x: x + timedelta(minutes=delta_min))
 ```
 
-3.原始数据长相大致如下
+3.Bar原始数据长相大致如下
 ![](../../assets/images/wt/wt018.png)
+
+4. Tick原始数据长相大致如下(**注意Tick数据action_time**)
+![](../../assets/images/wt/wt023.png)
 
 ## 创建项目环境
 
@@ -49,8 +54,8 @@ rates["time"] = rates["time"].map(lambda x: x + timedelta(minutes=delta_min))
 ![](../../assets/images/wt/wt019.png)
 4. 修改项目属性
 ![](../../assets/images/wt/wt020.png)
+(**所有重要的项目属性一定要设置好, 不然无法运行程序, 其他属性可参考同目录下TestDtPorter项目属性设置**)
 ![](../../assets/images/wt/wt021.png)
-(**项目属性途中属性设置可能不完整,其他属性可参考同目录下TestDtPorter项目属性设置**
 
 在`TestDtHelper.cpp`添加测试代码确保项目环境配置无误(**如果编译不通过建议检查环境, 不要再往下了**)
 
@@ -110,12 +115,14 @@ int main()
 ```dange
 由于我的数据是7*24小时数据, 在凌晨一点前, 即小时为0时, 数据计算会出错, 因此修改这里, 此处问了群主**非必要别修改**
 ```
-在 `WtDtHelper.cpp` 中的 `strToTime` 函数下修改一个地方: (>10000 改为 > 100)
+在 `WtDtHelper.cpp` 中的 `strToTime` 函数下修改一个地方: (>10000 改为 >= 100, 确保时间 `00:01:00` 能正确计算)
 ![](../../assets/images/wt/wt022.png)
 
 #### 3. bar数据
 
 在 `TestDtHelper.cpp` 中编写代码, 主要逻辑是创建bar结构体vector `std::vector<WTSBarStruct> bars;`, 然后填充结构体, 最后调用 `store_bars` 即可. 注意填充bar结构体时对应列名.
+
+1. 注意bar数据time字段需要计算, 精确到分
 
 ```cpp
 // 回调日志输出
@@ -240,9 +247,30 @@ int main()
 1. 如果是测试, 建议少整点tick数据
 
 2. 如果你的数据精度>3, 比如我使用外汇数据, 精度为5, 则需要修改源码 `dump_ticks`函数下有一句输出精度`ss.precision(5);`(非必要别改源码)
+
+3. **注意tick中action_time字段计算, 而且精确到毫秒**
 ```
 
 ```cpp
+// 将毫秒时间转数值时间
+uint32_t strToMsTime(const char* strTime)
+{
+	std::string str;
+	const char *pos = strTime;
+	while (strlen(pos) > 0)
+	{
+		if (pos[0] != ':')
+		{
+			str.append(pos, 1);
+		}
+		pos++;
+	}
+
+	uint32_t ret = atof(str.c_str()) * 1000;
+
+	return ret;
+}
+
 void csv_to_ticks(WtString tickFolder, WtString binFolder, FuncLogCallback cbLogger /* = NULL */)
 {
 	// 1. 判断目录
@@ -298,9 +326,12 @@ void csv_to_ticks(WtString tickFolder, WtString binFolder, FuncLogCallback cbLog
 			ts.turn_over = reader.get_double("turn_over");
 			ts.open_interest = reader.get_uint32("open_interest");
 			ts.diff_interest = reader.get_int32("diff_interest");
-			ts.trading_date = reader.get_uint32("trading_date");
-			ts.action_date = reader.get_uint32("action_date");
-			ts.action_time = reader.get_uint32("action_time");
+
+			// 日期和时间(毫秒)注意要计算变形
+			ts.trading_date = strToDate(reader.get_string("trading_date"));
+			ts.action_date = strToDate(reader.get_string("action_date"));
+			// 自定义了一个计算毫秒时间的函数
+			ts.action_time = strToMsTime(reader.get_string("action_time"));
 
 			ts.pre_close = reader.get_double("pre_close");
 			ts.pre_settle = reader.get_double("pre_settle");
@@ -351,4 +382,8 @@ int main()
 
 ### 成功验证
 
-检查 `csv/out` 目录下的csv数据和原数据是否一致即可!!!
+1. **bar数据**
+![](../../assets/images/wt/wt024.png)
+
+2. **tick数据**
+![](../../assets/images/wt/wt025.png)
