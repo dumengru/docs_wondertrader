@@ -61,7 +61,7 @@ hft:
         # 策略名称(在策略工厂源码中有用)
         name: HftDemoStrategy
         # 策略参数
-        params:			
+        params:
             code: CUSTOM.FX.EURUSD
             count: 6
             second: 5

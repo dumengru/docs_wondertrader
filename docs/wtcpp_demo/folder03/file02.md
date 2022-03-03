@@ -38,7 +38,7 @@ basefiles:
     hot: ./common/hots.json
     utf-8: false
 env:
-    name: hft	# 确定交易引擎类型
+    name: hft       # 确定交易引擎类型
     mode: product
     filters: filters.yaml
     fees: ./common/fees.json
