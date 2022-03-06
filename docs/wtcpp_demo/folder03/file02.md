@@ -439,7 +439,7 @@ _reader->init(cfg, this, _loader);
 
 #### 3. 初始化交易规则管理器
 
-主要是加载交易规则配置文件 `actpolicy.yaml`, 改文件主要针对特定品种对开仓平仓方向及数量做限制
+主要是加载交易规则配置文件 `actpolicy.yaml`, 该文件主要针对特定品种对开仓平仓方向及数量做限制
 
 ```cpp
 bool ActionPolicyMgr::init(const char* filename)
@@ -543,6 +543,7 @@ bool WtRunner::initParsers(WTSVariant* cfgParser)
 ##### 3. 初始化行情适配器
 
 1.`ParserAdapter::init()` 方法前半部分加载 ParserCTP.dll, 不再赘述, 对应配置文件中 
+
 ```yaml
 parsers:
 -   module: ParserCTP
@@ -565,12 +566,15 @@ if (_parser_api->init(cfg))
 ```
 - `ParserAdapter` 是行情适配器, 可以适配不同行情接口
 - `_parser_api`指向 `ParserCTP`, 即具体的CTP行情接口
+
 ```note
 标记一下
 1. **ParserAdapter**中的 **_parser_api**是**ParserCTP**
 2. **ParserCTP**中的**m_sink**是**ParserAdapter**
 ```
-- ` ParserCTP::init`加载 `thostmduserapi_se.dll` 并创建 CTP行情接口 `m_pUserAPI`, 该dll对应配置文件中的
+
+- `ParserCTP::init` 加载 `thostmduserapi_se.dll` 并创建 CTP行情接口 `m_pUserAPI`, 该dll对应配置文件中的
+
 ```yaml
 parsers:
 -   ctpmodule: tts_thostmduserapi_se
@@ -767,6 +771,7 @@ void WtHftEngine::run(bool bAsync /*= false*/)
 1.进入`HftStraContext::on_init()`
 2.回调策略 `_strategy->on_init(this);`
 3.策略文件 `WtHftStraDemo.cpp` 中的 `on_init` 方法如下
+
 ```cpp
 void WtHftStraDemo::on_init(IHftStraCtx* ctx)
 {
@@ -780,6 +785,7 @@ void WtHftStraDemo::on_init(IHftStraCtx* ctx)
 	_ctx->stra_log_info("回调策略 on_init ");	// 自己添加的
 }
 ```
+
 4.因此首先进入`HftStraBaseCtx::stra_get_ticks` 获取数据
 5.然后进入 ` HftStraBaseCtx::stra_sub_ticks` 订阅行情
 6.策略上下文回调策略初始化完毕
