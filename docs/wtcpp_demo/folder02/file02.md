@@ -27,7 +27,7 @@ if (m_sink && m_uTradingDate == 0)
     // 计算 trading_date 并填充 tick
     const char* session = pCommInfo->getSession();
     uint32_t trading_date = m_sink->getBaseDataMgr()->calcTradingDate(session, actDate, actTime);
-    tick->getTickStruct().trading_date = trading_date;
+    quote.trading_date = trading_date;
 }
 /* ----- 添加代码1 ------*/
 

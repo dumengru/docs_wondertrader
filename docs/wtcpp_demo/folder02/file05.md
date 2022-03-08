@@ -278,16 +278,3 @@ else if (StrUtil::startsWith(fullcode, "MARK.", false))
 
 成功执行收盘作业后会出现 `Storage/his` 文件夹, 保存各类 dsb文件
 ![](../../assets/images/wt/wt028.png)
-
-```tip
-如何在 7*24 小时下测试状态机?
-
-首次修改测试
-
-1. 修改 `statemonitor.yaml`
-2. 修改 `sessions.json`
-
-非首次
-3. 记得删除`Storage`文件夹, 也可以直接修改`marker.ini`日期小于当前日期即可
-
-```
