@@ -6,7 +6,7 @@ source: `{{ page.path }}`
 
 ## 解决目标
 
-本文主要解决1个问题, 即策略初始化时 `on_init` 中调用的三个方法及相关的判断逻辑
+本文主要解决的问题是策略初始化时 `on_init` 中调用的三个方法及相关的判断逻辑
 
 1. `ctx->stra_get_ticks`
 2. `ctx->stra_sub_ticks`
