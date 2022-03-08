@@ -1,4 +1,4 @@
-# HFT仿真进阶2: 源码解析
+# HFT仿真进阶2: 策略初始化
 
 source: `{{ page.path }}`
 
