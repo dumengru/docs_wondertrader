@@ -10,24 +10,20 @@ HFT仿真运行 "WtRunner"目录, 行情数据运行 "WtDtPorter"目录
 
 ## 准备工作
 
-### 1. 准备HFT策略配置文件
+### 准备HFT策略配置文件
 
 HFT配置文件参考文章"HFT仿真详解"
 
-### 2. 准备对应的历史数据
-
-如果没有dsb格式的历史数据参考文章"状态机详解" 或 "数据进阶: 全天候环境准备", 模拟一次收盘作业即可
-
-### 3. 准备TestDtPorter
+### 准备TestDtPorter
 
 确保TestDtPorter可以正常运行
 
-### 4. 注意事项
+### 注意事项
 
 1. 本人测试需要用到`CFFEX.IC.2203`, `CFFEX.IF.2203`, `CFFEX.IH.2203`, 因此在 "WtRunner" 和 "WtDtPorter" 的 `parsers:` 相关配置都直接筛选出来了.
 2. 确保WtRunner和WtDtPorter的配置共用数据目录
 
-### 5. 重要的配置示例
+### 重要的配置示例
 
 **WtDtPorter**
 
@@ -136,22 +132,7 @@ parsers:
     filter: CFFEX
 ```
 
-**数据目录Storage**
-
-his
-    min1
-        CFFEX
-            IC2203.dsb
-            IF2203.dsb
-            IH2203.dsb
-    ticks
-        CFFEX
-            20220307
-                IC2203.dsb
-                IF2203.dsb
-                IH2203.dsb
-
-### 6. 示例策略
+### 示例策略
 
 为了方便测试, 我们需要自己准备策略, 策略源码如下.
 
@@ -308,8 +289,9 @@ void WtHftStraDemo::on_channel_lost(IHftStraCtx* ctx)
 
 ## 程序运行
 
-1. 启动TestDtPorter, 确保能正常收到数据, 出现warning不用管, 此时 "Storage" 数据文件夹下应该会有一个 "rt" 目录
-2. 启动WtRunner即可
+1. 启动TestDtPorter, 确保能正常收到数据, 若出现warning则删除数据文件夹 "Storage" 然后重新启动
+2. 正常启动后 "Storage" 数据文件夹下应该会有一个 "rt" 目录
+3. 启动WtRunner即可
 
 ## 成功验证
 
