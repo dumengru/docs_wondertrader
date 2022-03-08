@@ -46,6 +46,20 @@ WT对数据时间的检查极为严苛, 这对实盘自然是非常好的, 但�
 
 `sections` 交易时段偏移后变为 2-2359(0点02分到23点59分), 这样几乎覆盖全天交易时段
 
+**statemonitor.yaml**
+
+```yaml
+TTS24:
+    closetime: 758     # 停止获取行情时间(会偏移)
+    inittime: 802      # 开盘前准备时间(会偏移)
+    name: TTS24测试
+    proctime: 759      # 处理收盘作业时间(会偏移)
+```
+
+closetime 偏移后变为 2358, proctime 偏移后变为 2359(和上面错了一分钟, 不要觉得奇怪, 代码里计算是如此的)
+
+当电脑时间大于 `closetime` 时便停止获取数据, 当时间大于`proctime` 时便开始收盘作业
+
 **commodities.json示例**
 
 ```json
@@ -66,21 +80,10 @@ WT对数据时间的检查极为严苛, 这对实盘自然是非常好的, 但�
     }
 }
 ```
-将你想使用的品种 `session` 字段修改和 `session.json` 一一对应
 
-**statemonitor.yaml**
+将你想使用的品种 `session` 字段修改和 `session.json` 一一对应, 同时注意 `dtcfg.yaml` 文件需要将 `allday:` 配置字段删掉或设为 `false`
 
-```yaml
-TTS24:
-    closetime: 2356     # 停止获取行情时间
-    inittime: 0001      # 开盘前准备时间
-    name: TTS24测试
-    proctime: 2357      # 处理收盘作业时间
-```
-
-最后记得注意 `dtcfg.yaml` 文件需要将 `allday:` 配置字段删掉或设为 `false`
-
-然后运行程序即可, 当电脑时间大于 `closetime` 时便停止获取数据, 当时间大于`proctime` 时便开始收盘作业, 成功运行截图参考文章"状态机详解"
+之后运行程序即可, 成功运行截图参考文章"状态机详解"
 
 ### 节假日规避
 
