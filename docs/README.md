@@ -2,13 +2,16 @@
 
 版本dev-0.9
 
-欢迎各位兄弟姐妹们为项目文档添砖加瓦...
+所有md格式文档都可以直接添加到页面里, 欢迎各位为项目文档添砖加瓦...
 
 ```tip
 1. 左上角搜索框可对文档进行关键字搜索
 
 2. 右上角可提交修改文档
 ```
+
+**WTPY文档添加顺序**
+
 
 **WTCPP文档添加顺序**
 
@@ -26,12 +29,9 @@
 12. [HFT仿真进阶2: 策略初始化](./wtcpp_demo/folder03/file04.md)
 13. [HFT仿真进阶3: 策略回调](./wtcpp_demo/folder03/file05.md)
 
-
 相关文档链接
 
 [仿真器和wtpy的前置知识](https://gitee.com/panyunan/wt4elegantrl-doc)
-
-
 
 ## 感谢QQ群友的文档支持:
 ```tip

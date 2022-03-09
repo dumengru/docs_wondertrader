@@ -1,7 +1,7 @@
 ---
-sort: 3
+sort: 2
 ---
 
-# WTPY
+# WTPY_DEMO
 
 {% include list.liquid all=true %}
