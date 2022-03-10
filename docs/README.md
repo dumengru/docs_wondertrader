@@ -11,23 +11,24 @@
 ```
 
 **WTPY文档添加顺序**
-
+1. 群主编写的系列文件 "WTPY/基本用法;API详解"
+2. [test_datafact](./wtpy/folder3/folder01/file01.md)
 
 **WTCPP文档添加顺序**
 
-1. [CTA回测详解](./wtcpp_demo/folder01/file01.md)
-2. [数据落地详解](./wtcpp_demo/folder02/file01.md)
-3. [对接 openctp 仿真](./wtcpp_demo/folder02/file02.md)
-4. [HFT仿真详解](./wtcpp_demo/folder03/file02.md)
-5. [数据压缩/解压](./wtcpp_demo/folder02/file03.md)
-6. [HFT回测进阶1: 环境准备](./wtcpp_demo/folder01/file02.md)
-7. [HFT回测进阶2: 源码解析](./wtcpp_demo/folder01/file03.md)
-8. [UDP数据转发](./wtcpp_demo/folder02/file04.md)
-9. [状态机详解](./wtcpp_demo/folder02/file05.md)
-10. [数据进阶: 全天候环境准备](./wtcpp_demo/folder02/file06.md)
-11. [HFT仿真进阶1: 环境准备](./wtcpp_demo/folder03/file03.md)
-12. [HFT仿真进阶2: 策略初始化](./wtcpp_demo/folder03/file04.md)
-13. [HFT仿真进阶3: 策略回调](./wtcpp_demo/folder03/file05.md)
+1. [CTA回测详解](./wtcpp/folder01/file01.md)
+2. [数据落地详解](./wtcpp/folder02/file01.md)
+3. [对接 openctp 仿真](./wtcpp/folder02/file02.md)
+4. [HFT仿真详解](./wtcpp/folder03/file02.md)
+5. [数据压缩/解压](./wtcpp/folder02/file03.md)
+6. [HFT回测进阶1: 环境准备](./wtcpp/folder01/file02.md)
+7. [HFT回测进阶2: 源码解析](./wtcpp/folder01/file03.md)
+8. [UDP数据转发](./wtcpp/folder02/file04.md)
+9. [状态机详解](./wtcpp/folder02/file05.md)
+10. [数据进阶: 全天候环境准备](./wtcpp/folder02/file06.md)
+11. [HFT仿真进阶1: 环境准备](./wtcpp/folder03/file03.md)
+12. [HFT仿真进阶2: 策略初始化](./wtcpp/folder03/file04.md)
+13. [HFT仿真进阶3: 策略回调](./wtcpp/folder03/file05.md)
 
 相关文档链接
 

@@ -1,4 +1,0 @@
-# NULL
-
-source: `{{ page.path }}`
-
