@@ -11,8 +11,9 @@
 ```
 
 **WTPY文档添加顺序**
-1. 群主编写的系列文件 "WTPY/基本用法;API详解"
-2. [test_datafact](./wtpy/folder3/folder01/file01.md)
+1. "WTPY/基本用法";
+2. "WTPY/API详解"
+3. [demo: test_datafact](./wtpy/folder3/folder01/file01.md)
 
 **WTCPP文档添加顺序**
 

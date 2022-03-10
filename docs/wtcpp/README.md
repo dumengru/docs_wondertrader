@@ -2,6 +2,6 @@
 sort: 3
 ---
 
-# WTCPP_DEMO
+# WTCPP
 
 {% include list.liquid all=true %}
