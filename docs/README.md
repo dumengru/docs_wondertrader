@@ -13,8 +13,9 @@
 **WTPY文档添加顺序**
 1. "WTPY/基本用法";
 2. "WTPY/API详解"
-3. [demo: test_datafact](./wtpy/folder3/folder01/file01.md)
-4. [demo: testDtHelper](./wtpy/folder3/folder01/file02.md)
+3. [下载外部数据: test_datafact](./wtpy/folder3/folder01/file01.md)
+4. [数据转存: testDtHelper](./wtpy/folder3/folder01/file02.md)
+5. [HFT回测: hft_fut_bt.runBT](./wtpy/folder3/folder02/file01.md)
 
 **WTCPP文档添加顺序**
 
