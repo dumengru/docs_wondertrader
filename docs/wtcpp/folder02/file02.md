@@ -8,47 +8,7 @@ source: `{{ page.path }}`
 
 ## 对接openctp仿真注意事项
 
-**openctp** 是极为优秀的仿真测试项目, 原本只要将ctp的两个dll文件替换掉就可以直接做仿真交易, 但 **openctp**的行情数据返回没有 `trading_date` 这个字段, 而 WonderTrader 项目中处理行情很多地方需要用 `trading_date` 做判断, 因此需要手动处理这个字段才能使用 `openctp` 做仿真交易.
-
-## 准备好修改源码了嘛?
-
-1.打开 "src\ParserCTP\ParserCTP.cpp"
-
-2.找到函数 `ParserCTP::OnRtnDepthMarketData`
-
-3.在改函数中添加代码
-
-- 逻辑: 如果 m_uTradingDate == 0, 则手动计算trading_date并填充
-
-```cpp
-/* ----- 添加代码0 ------*/
-if (m_sink && m_uTradingDate == 0)
-{
-    // 计算 trading_date 并填充 tick
-    const char* session = pCommInfo->getSession();
-    uint32_t trading_date = m_sink->getBaseDataMgr()->calcTradingDate(session, actDate, actTime);
-    quote.trading_date = trading_date;
-}
-/* ----- 添加代码1 ------*/
-
-// 回调行情适配器
-if(m_sink)
-    m_sink->handleQuote(tick, 1);
-
-tick->release();
-```
-
-```tip
-为何可以这么改? 建议查看文章 "数据落地" 深入了解
-```
-
-4.图片展示
-
-![](../../assets/images/wt/wt009.png)
-
-5.重新编译
-
-![](../../assets/images/wt/wt010.png)
+**openctp** 是极为优秀的仿真测试项目, 原本只要将ctp的两个dll文件替换掉就可以直接做仿真交易, 但 **openctp**的行情数据返回没有 `trading_date` 这个字段, 除此之外, 在7*24小时的测试环境中, 由于非交易时段的 `action_date` 和 `action_time` 小于本地时间, 因此 WonderTrader 项目中专门添加了配置字段 "localtime", 用本地时间填充对应的时间字段.
 
 ## 部署openctp环境
 
@@ -100,11 +60,12 @@ broadcaster:
 parsers:
  # 一般环境
 -   active: true   # 是否启动改环境
-    broker: 
+    broker: ""
     id: tts
     module: ParserCTP
     front: tcp://121.36.146.182:20004
     ctpmodule: tts_thostmduserapi_se
+    localtime: true     # 这个字段用本地时间填充对应的字段, 仅供测试使用, 如simnow全天候行情，openctp等环境, 实盘一定要关闭
     # 去 openctp 项目网站查看申请方式
     pass: ******
     user: ******
@@ -112,11 +73,12 @@ parsers:
     code: SHFE.au2204,SHFE.au2205
 # 7*24 小时环境
 -   active: false
-    broker: 
+    broker: ""
     id: tts24       
     module: ParserCTP
     front: tcp://122.51.136.165:20004
     ctpmodule: tts_thostmduserapi_se
+    localtime: true     # 这个字段用本地时间填充对应的字段, 仅供测试使用, 如simnow全天候行情，openctp等环境, 实盘一定要关闭
     # 去 openctp 项目网站查看申请方式
     pass: ******
     user: ******

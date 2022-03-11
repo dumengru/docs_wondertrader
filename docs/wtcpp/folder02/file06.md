@@ -105,48 +105,34 @@ bool isAllHoliday = false;  // 默认是true
 !!!非必要别改源码, 测试完记得改回来
 ```
 
-## 规避仿真时间校验
-
-在文章 "对接openctp" 中我提到如何在wt中使用openctp做仿真交易, 当时只是填充了 `trading_date` 字段, 然而随着源码阅读的深入, 简单的填充已经无法满足 7*24 小时环境测试了, 因为在仿真交易中会对行情的 `action_time` 字段和电脑当前时间字段做校验, 试想在非交易时段, 服务器回放的都是历史数据, `action_time` 自然是小于当前时间的, 于是程序便会一直卡住, 不再继续往下了.(**虽然给测试造成了很大阻碍, 但是在实盘中还是非常必要的**)
-
-### 如何规避仿真的时间校验呢?
-
-在 `ParserCTP::OnRtnDepthMarketData` 方法末尾添加如下代码
-
-```cpp
-/* ----- 添加代码0 ------*/
-if (m_sink && m_uTradingDate == 0)
-{
-    /* 对接openctp, 添加 trading_date 字段
-    const char* session = pCommInfo->getSession();
-    uint32_t trading_date = m_sink->getBaseDataMgr()->calcTradingDate(session, actDate, actTime);
-    quote.trading_date = trading_date;
-    */
-
-    // 在7*24测试环境下跳过框架中的时间校验
-    uint32_t curDate, curTime;
-    TimeUtils::getDateTime(curDate, curTime);
-    quote.action_date = curDate;
-    quote.action_time = curTime;
-    quote.trading_date = curDate;
-
-}
-/* ----- 添加代码1 ------*/
-if(m_sink)
-    m_sink->handleQuote(tick, 1);
-```
-
-1. 在文章 "对接openctp" 中也是修改的这里, 因为openctp不提供trading_date字段, 我便自己给填充了
-2. 这里直接用当前时间和日期填充 `action_date` 和 `action_time`(顺便直接填充了 `trading_date`) 便可以规避掉时间校验
-
-```danger
-!!!非必要别改源码, 仅供测试使用
-
-!!!非必要别改源码, 仅供测试使用
-
-!!!非必要别改源码, 仅供测试使用
-```
 
 ## 注意事项
 
 每次修改完源码记得重新生成, 然后将对应的dll文件放到对应的文件夹下
+
+## 规避仿真时间校验
+
+旧版本:
+在文章 "对接openctp" 中我提到如何在wt中使用openctp做仿真交易, 当时只是填充了 `trading_date` 字段, 然而随着源码阅读的深入, 简单的填充已经无法满足 7*24 小时环境测试了, 因为在仿真交易中会对行情的 `action_time` 字段和电脑当前时间字段做校验, 试想在非交易时段, 服务器回放的都是历史数据, `action_time` 自然是小于当前时间的, 于是程序便会一直卡住, 不再继续往下了.(**虽然给测试造成了很大阻碍, 但是在实盘中还是非常必要的**)
+
+新版本:
+WonderTrader 项目中专门添加了配置字段 "localtime", 用本地时间填充对应的时间字段.
+
+仅仅修改一下行情配置文件 "parsers.yaml" 即可
+
+```yaml
+parsers:
+# 7*24 小时环境
+-   active: true
+    broker: ""
+    id: tts24       
+    module: ParserCTP
+    front: tcp://122.51.136.165:20004
+    ctpmodule: tts_thostmduserapi_se
+    localtime: true     # 这个字段用本地时间填充对应的字段, 仅供测试使用, 如simnow全天候行情，openctp等环境, 实盘一定要关闭
+    # 去 openctp 项目网站查看申请方式
+    pass: ******
+    user: ******
+    # 只接收 au 行情
+    code: SHFE.au2204,SHFE.au2205
+```
