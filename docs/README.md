@@ -32,6 +32,7 @@
 11. [HFT仿真进阶1: 环境准备](./wtcpp/folder03/file03.md)
 12. [HFT仿真进阶2: 策略初始化](./wtcpp/folder03/file04.md)
 13. [HFT仿真进阶3: 策略回调](./wtcpp/folder03/file05.md)
+14. [贡献文档: QuoteFactory模块(中泰XTP)](./wtcpp/folder50/file01.md)
 
 相关文档链接
 
@@ -48,6 +49,8 @@
 **nullptr**
 
 **elementX**
+
+**fall**
 
 **祥子**
 ```
