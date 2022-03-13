@@ -237,7 +237,55 @@ writer:
 
 ## 重写CTA策略
 
-为了方便调试, 我对 "WtStraDualThrust.cpp" 做了细微改动, 主要是打印回调记录, 源码如下
+为了方便调试, 我对 "WtStraDualThrust" 做了细微改动, 主要是打印回调记录, 源码如下
+
+**WtStraDualThrust.h**
+
+```cpp
+#pragma once
+#include "../Includes/CtaStrategyDefs.h"
+
+class WtStraDualThrust : public CtaStrategy
+{
+public:
+	WtStraDualThrust(const char* id);
+	virtual ~WtStraDualThrust();
+
+public:
+	virtual const char* getFactName() override;
+
+	virtual const char* getName() override;
+
+	virtual bool init(WTSVariant* cfg) override;
+
+	virtual void on_schedule(ICtaStraCtx* ctx, uint32_t curDate, uint32_t curTime) override;
+
+	virtual void on_init(ICtaStraCtx* ctx) override;
+
+	virtual void on_tick(ICtaStraCtx* ctx, const char* stdCode, WTSTickData* newTick) override;
+
+	virtual void on_bar(ICtaStraCtx* ctx, const char* stdCode, const char* period, WTSBarStruct* newBar) override;
+
+
+private:
+	//指标参数
+	double		_k1;
+	double		_k2;
+	uint32_t	_days;
+
+	//数据周期
+	std::string _period;
+	//K线条数
+	uint32_t	_count;
+
+	//合约代码
+	std::string _code;
+
+	bool		_isstk;
+};
+```
+
+**WtStraDualThrust.h**
 
 ```cpp
 #include "WtStraDualThrust.h"
@@ -413,6 +461,12 @@ void WtStraDualThrust::on_tick(ICtaStraCtx* ctx, const char* stdCode, WTSTickDat
 {
 	//没有什么要处理
 	ctx->stra_log_info(fmt::format("回调 on_tick, code: {}, date: {}, time: {}", newTick->code(), ctx->stra_get_date(), ctx->stra_get_time()).c_str());
+}
+
+void WtStraDualThrust::on_bar(ICtaStraCtx* ctx, const char* stdCode, const char* period, WTSBarStruct* newBar)
+{
+	//没有什么要处理
+	ctx->stra_log_info(fmt::format("回调 on_bar, code: {}, date: {}, time: {}", stdCode, ctx->stra_get_date(), ctx->stra_get_time()).c_str());
 }
 ```
 
@@ -593,6 +647,6 @@ bspolicy: actpolicy.yaml    #开平策略配置文件
 
 ## 全部配置成功示例如下
 
-不仅要保证 `on_tick` 回调成功, 更要保证分钟闭合后 `on_schedule` 回调成功
+不仅要保证 `on_tick` 回调成功, 更要保证分钟闭合后 `on_schedule` 和 `on_bar` 回调成功
 
-![](../../assets/images/wt/wt031.png)
+![](../../assets/images/wt/wt032.png)
