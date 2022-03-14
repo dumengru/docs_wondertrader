@@ -68,8 +68,8 @@ traders:
     ctpmodule: tts_thosttraderapi_se
     front: tcp://121.36.146.182:20002
     broker: ""      # 可以为空, 但必须要有
-    user: 1493
-    pass: 123456
+    user: ******
+    pass: ******
     appid:
     authcode:
     quick: true
@@ -88,8 +88,8 @@ traders:
     ctpmodule: tts_thosttraderapi_se
     front: tcp://122.51.136.165:20002
     broker: ""
-    user: 1493
-    pass: 123456
+    user: ******
+    pass: ******
     appid:
     authcode:
     quick: true
@@ -109,8 +109,8 @@ parsers:
     module: ParserCTP
     front: tcp://121.36.146.182:20004
     ctpmodule: tts_thostmduserapi_se
-    pass: 123456
-    user: 1493
+    pass: ******
+    user: ******
     code: SHFE.au2204,SHFE.au2205
 -   active: true
     broker: ""
@@ -118,8 +118,8 @@ parsers:
     module: ParserCTP
     front: tcp://122.51.136.165:20004
     ctpmodule: tts_thostmduserapi_se
-    pass: 123456
-    user: 1493
+    pass: ******
+    user: ******
     code: SHFE.au2204,SHFE.au2205
 ```
 

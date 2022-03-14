@@ -35,6 +35,7 @@
 14. [贡献文档: QuoteFactory模块(中泰XTP)](./wtcpp/folder50/file01.md)
 15. [CTA仿真完整篇1: 环境部署](./wtcpp/folder03/file06.md)
 16. [CTA仿真完整篇2: 策略初始化](./wtcpp/folder03/file07.md)
+17. [CTA仿真完整篇3: 策略回调](./wtcpp/folder03/file07.md)
 
 相关文档链接
 

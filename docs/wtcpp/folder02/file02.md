@@ -131,6 +131,10 @@ FN0230:
 
 1.进入 openctp 项目网站, 下载对应版本的 dll文件
 
+```tip
+一定要下载对应版本哦!!!
+```
+
 ![](../../assets/images/wt/wt011.png)
 
 2.将 `thostmduserapi_se.dll` 改名为 `tts_thostmduserapi_se.dll`(这里只用到行情dll), 并放到 "Debug\QuoteFactory\parsers" 目录下
