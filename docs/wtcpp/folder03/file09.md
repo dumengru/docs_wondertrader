@@ -1,212 +1,315 @@
-# CTA仿真完整篇3: 开仓
+# CTA仿真完整篇1: 环境准备
 
 source: `{{ page.path }}`
 
-之前铺垫了那么多文章, 其实都没什么卵用, 只有通过计算机将订单发送到交易所的那一刻, 我们才算真正完成一笔量化交易.
+之前的文章都是基于0.9dev版本的, 最近WT0.9稳定版更新了, 趁着这个机会, 我下载了WT0.9master版本, 并开始重新梳理WT项目逻辑.
 
-本篇将要剖析 CTA 引擎如何完成一笔开仓操作.
+## 生成解决方案
 
-## 准备策略
+1. 从github下载"wondertrader-master"(最新0.9版本), 解压, 进入"src/"目录, 用VS2017打开 "WonderTrader.sln"
+2. 工具栏选择 "Debug" , "x64", 然后菜单栏选择"生成", "生成解决方案".(需要几分钟)
+3. 此时"src/"目录最下边会出现一个"x64/"目录, 进入"x64/Debug", 之前生成的文件都在这里.
+4. "Debug/"目录下"QuoteFactory/"文件夹对应项目中"DataKit/QuoteFactory", 主要负责接收市场行情, 然后: 1. 保存数据到本地(盘中临时数据是 dmb, 收盘之后会压缩成 dsb), 2. 向本地端口推送行情, 这个在配置中.
+5. "Debug/"目录下"WtRunner/"文件夹对应项目中"Porter/WtRunner"
+6. 右击"QuoteFactory"项目属性, 选择"调试"->"工作目录", 修改为"OutDir"; 右击"WtRunner"项目属性, 选择"调试"->"工作目录", 修改为"OutDir". 这一步修改是为了以后调试方便, 修改成"OutDir"后, 若是对文件做了改动, 以后项目输出文件都会输出到对应名称目录下.
 
-为了方便调试, 我们需要先修改一下策略源码.
+现在你的项目和文件目录应该大致如下
 
-**WtStraDualThrust.h**
+![](../../assets/images/wt/wt036.png)
 
-```cpp
-#pragma once
-#include "../Includes/CtaStrategyDefs.h"
+## QuoteFactory
 
-class WtStraDualThrust : public CtaStrategy
-{
-public:
-	WtStraDualThrust(const char* id);
-	virtual ~WtStraDualThrust();
+首先需要先配置好"QuoteFactory"
 
-public:
-	virtual const char* getFactName() override;
+### 添加文件
 
-	virtual const char* getName() override;
+1.获取配置文件
 
-	virtual bool init(WTSVariant* cfg) override;
+进入"wondertrader-master/dist/QuoteFactory"目录下, 将所有yaml文件复制粘贴到"wondertrader-master/src/x64/Debug/QuoteFactory"目录下.
 
-	virtual void on_schedule(ICtaStraCtx* ctx, uint32_t curDate, uint32_t curTime) override;
+进入"wondertrader-master/dist/"目录下, 将"common"整个文件夹复制粘贴到"wondertrader-master/src/x64/Debug/"目录下.
 
-	virtual void on_init(ICtaStraCtx* ctx) override;
+2.获取openctp行情dll文件
 
-	virtual void on_tick(ICtaStraCtx* ctx, const char* stdCode, WTSTickData* newTick) override;
+进入openctp官网下载对应版本(6.3.15)的"thostmduserapi_se.dll"放到"QuoteFactory/parser"目录下
 
+现在你的项目和文件目录应该大致如下
 
-private:
-	//指标参数
-	double		_k1;
-	double		_k2;
-	uint32_t	_days;
+![](../../assets/images/wt/wt037.png)
 
-	//数据周期
-	std::string _period;
-	//K线条数
-	uint32_t	_count;
+### 修改配置
 
-	//合约代码
-	std::string _code;
+dtcfg.yaml 这个是该程序主要配置项, 添加一个字段 `allday: true` 即可
 
-	bool		_isstk;
-};
+```yaml
+basefiles:
+    commodity: ../common/commodities.json
+    contract: ../common/contracts.json
+    holiday: ../common/holidays.json
+    session: ../common/sessions.json
+broadcaster:
+    active: true
+    bport: 3997
+    broadcast:
+    -   host: 255.255.255.255
+        port: 9001
+        type: 2
+    multicast_:
+    -   host: 224.169.169.169
+        port: 9002
+        sendport: 8997
+        type: 0
+    -   host: 224.169.169.169
+        port: 9003
+        sendport: 8998
+        type: 1
+    -   host: 224.169.169.169
+        port: 9004
+        sendport: 8999
+        type: 2
+allday: true
+parsers: mdparsers.yaml
+statemonitor: statemonitor.yaml
+writer:
+    async: true
+    groupsize: 100
+    path: ../FUT_Data
+    savelog: true
 ```
 
-**WtStraDualThrust.h**
+mdparsers.yaml 本地行情端口(`localtime: true`)
 
-```cpp
-#include "WtStraDualThrust.h"
-
-#include "../Includes/ICtaStraCtx.h"
-
-#include "../Includes/WTSContractInfo.hpp"
-#include "../Includes/WTSVariant.hpp"
-#include "../Includes/WTSDataDef.hpp"
-#include "../Share/decimal.h"
-
-extern const char* FACT_NAME;
-
-//By Wesley @ 2022.01.05
-#include "../Share/fmtlib.h"
-
-WtStraDualThrust::WtStraDualThrust(const char* id)
-	: CtaStrategy(id)
-{
-}
-
-
-WtStraDualThrust::~WtStraDualThrust()
-{
-}
-
-const char* WtStraDualThrust::getFactName()
-{
-	return FACT_NAME;
-}
-
-const char* WtStraDualThrust::getName()
-{
-	return "DualThrust";
-}
-
-bool WtStraDualThrust::init(WTSVariant* cfg)
-{
-
-	if (cfg == NULL)
-		return false;
-
-	_days = cfg->getUInt32("days");
-	_k1 = cfg->getDouble("k1");
-	_k2 = cfg->getDouble("k2");
-
-	_period = cfg->getCString("period");
-	_count = cfg->getUInt32("count");
-	_code = cfg->getCString("code");
-
-	_isstk = cfg->getBoolean("stock");
-
-	return true;
-}
-
-void WtStraDualThrust::on_schedule(ICtaStraCtx* ctx, uint32_t curDate, uint32_t curTime)
-{
-	ctx->stra_log_info(fmt::format("回调 on_schedule, date: {}, time: {}", ctx->stra_get_date(), ctx->stra_get_time()).c_str());
-	std::string code = _code;
-	if (_isstk)
-		code += "-";
-
-	uint32_t trdUnit = 1;
-	if (_isstk)
-		trdUnit = 100;
-
-	double curPos = ctx->stra_get_position(_code.c_str()) / trdUnit;
-	if (decimal::eq(curPos, 0))
-	{
-		ctx->stra_enter_long(_code.c_str(), 1 * trdUnit, "DT_EnterLong");
-		//向上突破
-		ctx->stra_log_info(fmt::format("空仓, 买入 1 手多单").c_str());
-	}
-	else if (decimal::le(curPos, 2))
-	{
-		//多仓出场
-		ctx->stra_enter_long(_code.c_str(), 1 * trdUnit, "DT_EnterLong");
-		ctx->stra_log_info(fmt::format("有1手多单, 再买开1手多单").c_str());
-	}
-	else if (decimal::gt(curPos, 0))
-	{
-		//多仓出场
-		ctx->stra_enter_short(_code.c_str(), 1 * trdUnit, "DT_EnterShort");
-		ctx->stra_log_info(fmt::format("有2手多单, 开1手空单").c_str());
-	}
-
-	ctx->stra_save_user_data("test", "what");
-}
-
-void WtStraDualThrust::on_init(ICtaStraCtx* ctx)
-{
-	ctx->stra_log_info(fmt::format("回调 on_init, date: {}, time: {}", ctx->stra_get_date(), ctx->stra_get_time()).c_str());
-
-	std::string code = _code;
-	if (_isstk)
-		code += "-";
-
-	// 获取 CFFEX.IC.2203 的tick数据
-	WTSTickSlice* ticks = ctx->stra_get_ticks(_code.c_str(), 30);
-	if (ticks)
-		ticks->release();
-
-	// 获取 CFFEX.IC.2203 的bar数据
-	WTSKlineSlice *kline1 = ctx->stra_get_bars(code.c_str(), _period.c_str(), _count, true);
-	if (kline1 == NULL)
-	{
-		//这里可以输出一些日志
-		return;
-	}
-	kline1->release();
-
-	// 主动订阅 CFFEX.IC.2203 tick数据
-	ctx->stra_sub_ticks(_code.c_str());
-}
-
-void WtStraDualThrust::on_tick(ICtaStraCtx* ctx, const char* stdCode, WTSTickData* newTick)
-{
-	ctx->stra_log_info(fmt::format("回调 on_tick, date: {}, time: {}", ctx->stra_get_date(), ctx->stra_get_time()).c_str());
-}
+```yaml
+parsers:
+-   active: true
+    broker: ''
+    code: SHFE.au2206,SHFE.au2208  # 品种过滤
+    front: ttcp://122.51.136.165:20004
+    id: parser
+    localtime: true
+    module: ParserCTP
+    pass: ******        # openctp 账户密码
+    user: ******
 ```
-
-代码逻辑很简单, 只订阅了一个品种, 并且直接在 `on_schedule` 中下单. 记得将修改的策略文件重新生成并放在对应的文件夹下.
-
-## stra_enter_long
-
-运行 `QuoteFactory.exe`, 并将断点打在 `WtStraDualThrust::on_schedule` 方法下的 `ctx->stra_get_position` 上.
 
 ```tip
-如果你进行了多次测试, 建议删除 "WtRunner/generated" 文件夹, 因为它会记录之前测试时的持仓
+为方便随时测试, 我们需要添加一个全天候盘的交易时段
 ```
 
-1. 执行 `ctx->stra_enter_long`
-2. 进入 "CtaStraBaseCtx.cpp", 首先会执行 `_engine->sub_tick` 订阅被下单的品种, 接着向下
-3. 这里有三种下单方式: 市价单, 限价单和停止单, 这里我们会执行市价单, 执行 `append_signal`
-4. 进入 `CtaStraBaseCtx::append_signal` 添加品种信号: 这里会将下单数量, 价格(最新价), 用户标签, 下单时间(精确到秒), 以及是否在调度中(on_schedule开始就会设置在调度中, 因此如果不是在 `on_schedule` 接口下的订单回是false)
-5. 所有订单的信息都保存在 `_sig_map` 中, 然后将下单信号写入本地文件 "signals.csv"
-6. 执行 `save_data` 保存各种数据
-7. 至此, `stra_enter_long` 方法执行完毕
+../common/session.json
 
-可是我们目前并有发送订单到交易所
+```json
+"ALLDAY":{
+    "name":"全天候盘",
+    "offset": -480,
+    "sections":[
+        {
+            "from": 800,
+            "to": 800
+        }
+    ]
+},
+```
 
-## CtaStraBaseCtx
+然后将对应的品种也修改为该交易时段 `"session": "ALLDAY"`
 
-1. 继续向下执行, 回到 "WtStraDualThrust.cpp", 结束 `WtStraDualThrust::on_schedule`.
-2. 进入 "CtaStraContext.cpp", 结束
-3. 进入 "CtaStraBaseCtx.cpp", 向下执行至结束
-4. 进入 "WtCtaEngine.cpp", 向下执行至**处理组合理论部位** `append_signal`
-5. 进入 `WtEngine::append_signal`, 这里会将下单数量和时间保存到 `_sig_map`
-6. 接着向下走到 `auto& m : _pos_map`, 由于这次首次下单, 持仓为空, 所以直接跳过
-7. 接着向下执行 `_exec_mgr.set_positions` 
-8. 进入 `WtExecMgr.cpp`, 这个是执行管理器, 同时管理多个执行器, 直接走到 `executer->set_position`
-9. 进入 "WtDistExecuter.cpp", 将品种及仓位更新信息保存在 `_target_pos` 中
-10. 调度器逻辑执行完毕
-11. 继续向下执行回到 "WtCtaTicker.cpp"
+../common/commodities.json
 
+```json
+"au": {
+    "covermode": 1,
+    "pricemode": 1,
+    "category": 1,
+    "precision": 2,
+    "pricetick": 0.02,
+    "volscale": 1000,
+    "name": "沪金",
+    "exchg": "SHFE",
+    "session": "ALLDAY",
+    "holiday": "CHINA"
+},
+```
+
+其他配置文件, 不用管
+
+运行程序即可, 运行结果应该大致如下(如出现警告, 删除"FUT_Data"文件夹即可)
+
+![](../../assets/images/wt/wt038.png)
+
+## WtRunner
+
+### 添加文件
+
+1.获取配置文件
+
+wtRunner配置文件参考 "wondertrader-master/dist/WtRunnerCta", 依旧是全部复制
+
+2.获取openctp行情dll文件
+
+进入openctp官网下载对应版本(6.3.15)的"thostmduserapi_se.dll"放到"WtRunner/parser"目录下, "thosttraderapi_se.dll"放到"WtRunner/traders"目录下
+
+## 修改文件
+
+config.yaml 是该程序主要配置文件, 修改品种为 "SHFE.au.2206"(建议复制粘贴)
+
+```yaml
+#基础配置文件
+basefiles:
+    commodity: ../common/commodities.json   #品种列表
+    contract: ../common/contracts.json      #合约列表
+    holiday: ../common/holidays.json        #节假日列表
+    hot: ../common/hots.json                #主力合约映射表
+    session: ../common/sessions.json        #交易时间模板
+#数据存储
+data:
+    store:
+        path: ../FUT_Data/      #数据存储根目录
+
+#环境配置
+env:
+    name: cta               #引擎名称：cta/hft/sel
+    product:
+        session: ALLDAY    #驱动交易时间模板，TRADING是一个覆盖国内全部交易品种的最大的交易时间模板，从夜盘21点到凌晨1点，再到第二天15:15，详见sessions.json
+    riskmon:                #组合风控设置
+        active: false            #是否开启
+        module: WtRiskMonFact   #风控模块名，会根据平台自动补齐模块前缀和后缀
+        name: SimpleRiskMon     #风控策略名，会自动创建对应的风控策略
+        #以下为风控指标参数，该风控策略的主要逻辑就是日内和多日的跟踪止损风控，如果回撤超过阈值，则降低仓位
+        base_amount: 5000000    #组合基础资金，WonderTrader只记录资金的增量，基础资金是用来模拟组合的基本资金用的，和增量相加得到动态权益
+        basic_ratio: 101        #日内高点百分比，即当日最高动态权益是上一次的101%才会触发跟踪侄止损
+        calc_span: 5            #计算时间间隔，单位s
+        inner_day_active: true  #日内跟踪止损是否启用
+        inner_day_fd: 20.0      #日内跟踪止损阈值，即如果收益率从高点回撤20%，则触发风控
+        multi_day_active: false #多日跟踪止损是否启用
+        multi_day_fd: 60.0      #多日跟踪止损阈值
+        risk_scale: 0.3         #风控系数，即组合给执行器的目标仓位，是组合理论仓位的0.3倍，即真实仓位是三成仓
+        risk_span: 30           #风控触发时间间隔，单位s。因为风控计算很频繁，如果已经触发风控，不需要每次重算都输出风控日志，加一个时间间隔，友好一些
+
+strategies:
+    # CTA策略配置，当mocker为cta时会读取该配置项
+    cta:
+    -   active: true       # 模块名，linux下为xxxx.so
+        id: dt_if          # 策略ID，自定义的
+        name: WtCtaStraFact.DualThrust   # 策略名，要和factory中的匹配
+        params:                         # 策略初始化参数，这个根据策略的需要提供
+            code: SHFE.au.2206
+            count: 1
+            days: 30
+            k1: 0.6
+            k2: 0.6
+            period: m1
+            stock: false
+            
+fees: ../common/fees.json   #佣金配置文件
+executers: executers.yaml   #执行器配置文件
+filters: filters.yaml       #过滤器配置文件，这个主要是用于盘中不停机干预的
+parsers: tdparsers.yaml     #行情通达配置文件
+traders: tdtraders.yaml     #交易通道配置文件
+bspolicy: actpolicy.yaml    #开平策略配置文件
+```
+
+tdparsers.yaml 配置文件如下
+
+```yaml
+parsers:
+-   active: true
+    bport: 9001
+    filter: ''
+    host: 127.0.0.1
+    id: parser1
+    module: ParserUDP
+    sport: 3997
+```
+
+tdtraders.yaml 配置文件如下
+
+```yaml
+traders:
+-   active: true
+    appid: ''
+    authcode: ''
+    broker: ''
+    front: tcp://122.51.136.165:20002
+    id: tts
+    module: TraderCTP
+    user: ******
+    pass: ******
+    quick: true
+    riskmon:
+        active: true
+        policy:
+            default:
+                cancel_stat_timespan: 10
+                cancel_times_boundary: 20
+                cancel_total_limits: 470
+                order_stat_timespan: 10
+                order_times_boundary: 20
+```
+
+executers.yaml(建议复制粘贴)
+
+```yaml
+#一个组合可以配置多个执行器，所以executers是一个list
+executers:
+-   active: true    #是否启用
+    id: exec         #执行器id，不可重复
+    trader: tts     #执行器绑定的交易通道id，如果不存在，无法执行
+    scale: 1         #数量放大倍数，即该执行器的目标仓位，是组合理论目标仓位的多少倍，可以为小数 
+    local: true     # 启用本地执行器
+
+    policy:         #执行单元分配策略，系统根据该策略创建对一个的执行单元
+        default:        #默认策略，根据品种ID设置，如SHFE.rb，如果没有针对品种设置，则使用默认策略
+            name: WtExeFact.WtMinImpactExeUnit      #执行单元名称
+            offset: 0       #委托价偏移跳数
+            expire: 5       #订单超时没秒数
+            pricemode: 1    #基础价格模式，-1-己方最优，0-最新价，1-对手价
+            span: 500       #下单时间间隔（tick驱动的）
+            byrate: false   #是否按对手盘挂单量的比例挂单，配合rate使用
+            lots: 1         #固定数量
+            rate: 0         #挂单比例，配合byrate使用
+
+    clear:                  #过期主力自动清理配置
+        active: false       #是否启用
+        excludes:           #排除列表
+        - CFFEX.IF
+        - CFFEX.IC
+        includes:           #包含列表
+        - SHFE.rb
+```
+
+其他配置文件可以不用管
+
+### 修改策略
+
+WT自带的CTA策略输出的信息太少, 我们需要略微修改下, 方便调试
+
+打开 "Plugins/WtCtaStraFact/WtStraDualThrust.cpp"
+
+1.`on_tick` 首行添加
+
+```cpp
+ctx->stra_log_info(fmt::format("策略回调on_tick, {}", ctx->stra_get_time()).c_str());
+```
+
+2.`on_init`首行添加
+
+```cpp
+ctx->stra_log_info(fmt::format("策略回调on_init, {}", ctx->stra_get_time()).c_str());
+ctx->stra_sub_ticks(code.c_str());
+```
+
+3.`on_schedule`首行添加
+
+```cpp
+ctx->stra_log_info(fmt::format("策略回调on_schedule, {}", ctx->stra_get_time()).c_str());
+```
+
+4.右击项目"Plugins/WtCtaStraFact", 重新生成, 然后在"Debug/"目录下找到"WtCtaStraFact.dll", 放到"WtRunner/cta/"目录下(替换)
+
+## 测试成功
+
+1. 启动"QuoteFactory.exe"(建议每次启动前删除"FUT_Data"数据目录)
+2. 启动"WtRunner.exe"
+3. 一定要在分钟结束后看到"策略回调on_schedule"才算成功
+
+![](../../assets/images/wt/wt039.png)

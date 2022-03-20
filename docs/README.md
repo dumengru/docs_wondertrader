@@ -1,6 +1,6 @@
 # WonderTrader文档
 
-版本dev-0.9
+版本master-0.9
 
 所有md格式文档都可以直接添加到页面里, 欢迎各位为项目文档添砖加瓦...
 
@@ -33,11 +33,14 @@
 12. [HFT仿真进阶2: 策略初始化](./wtcpp/folder03/file04.md)
 13. [HFT仿真进阶3: 策略回调](./wtcpp/folder03/file05.md)
 14. [贡献文档: QuoteFactory模块(中泰XTP)](./wtcpp/folder50/file01.md)
-15. [CTA仿真完整篇1: 环境部署](./wtcpp/folder03/file06.md)
-16. [CTA仿真完整篇2: 策略初始化](./wtcpp/folder03/file07.md)
-17. [CTA仿真完整篇3: 策略回调](./wtcpp/folder03/file07.md)
+15. [CTA仿真进阶篇1: 环境部署](./wtcpp/folder03/file06.md)
+16. [CTA仿真进阶篇2: 策略初始化](./wtcpp/folder03/file07.md)
+17. [CTA仿真进阶篇3: 策略回调](./wtcpp/folder03/file08.md)
 18. [贡献文档: WT使用一周后的积累](./wtcpp/folder50/file02.md)
 19. [贡献文档: WonderTrader-ubuntu安装](./wtcpp/folder50/file03.md)
+20. [CTA仿真完整篇1: 环境准备](./wtcpp/folder03/file09.md)
+21. [CTA仿真完整篇2: 初始化](./wtcpp/folder03/file10.md)
+22. [CTA仿真完整篇3: 下单流程](./wtcpp/folder03/file11.md)
 
 相关文档链接
 

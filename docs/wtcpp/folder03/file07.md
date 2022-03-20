@@ -1,4 +1,4 @@
-# CTA仿真完整篇2: 策略初始化
+# CTA仿真进阶篇2: 策略初始化
 
 source: `{{ page.path }}`
 
@@ -67,7 +67,7 @@ void WtStraDualThrust::on_init(ICtaStraCtx* ctx)
 
 1. 断点在 `ctx->stra_get_bars` 
 2. 进入 `CtaStraBaseCtx.cpp`, 
-3. 此处如果还没有主K, 则将当前品种设置为主K, 如果已有主K, 则会抛出异常, 因此 **CTA 策略文件中只能订阅一个品种的K线**
+3. 此处如果还没有主K, 则将当前品种设置为主K, 如果已有主K, 则会抛出异常, 因此 **CTA策略中只能有一个品种作为主K, 如果想订阅多个品种K线, 注意`isMain`, 这个参数, 订阅其他K线需要设置为false, (默认也是false)**
 4. 继续向下执行, 调用 `_engine->get_kline_slice`
 5. 进入 "WtEngine.cpp", 首先对周期进行了判断, **1min, 5min和1Day是WT内置的基础周期**, 最后调用 `_data_mgr->get_kline_slice`
 6. 进入 "WtDtMgr.cpp", 首先会将品种存放到 `_subed_basic_bars` 中, 然后调用 `_reader->readKlineSlice`
