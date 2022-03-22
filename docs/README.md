@@ -41,6 +41,7 @@
 20. [CTA仿真完整篇1: 环境准备](./wtcpp/folder03/file09.md)
 21. [CTA仿真完整篇2: 初始化](./wtcpp/folder03/file10.md)
 22. [CTA仿真完整篇3: 下单流程](./wtcpp/folder03/file11.md)
+23. [CTA仿真完整篇4: 配置文件](./wtcpp/folder03/file12.md)
 
 相关文档链接
 

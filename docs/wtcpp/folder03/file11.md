@@ -73,4 +73,6 @@ if (isBuy)
 6. `WtLocalExecuter`
 7. `WtMinImpactExeUnit`
 
-确实是如此复杂, 而且是相互嵌套, 反复回调. 但与此同时, 也能明显感觉到开发者的严谨. 在复杂多变的市场上, 谁敢拿真金白银开玩笑呢?
+为方便大家理解流程, 最后再附上一张图
+
+![](../../assets/wt/../images/wt/wt040.jpg)
